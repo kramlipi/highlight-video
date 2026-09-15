@@ -1,0 +1,17 @@
+{
+  "name": "Highlight Video",
+  "short_name": "Highlight Video",
+  "description": "Turn Markdown into a themed article video. Bold phrases become a yellow highlighter.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101218",
+  "theme_color": "#101218",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

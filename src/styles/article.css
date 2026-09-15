@@ -1,0 +1,190 @@
+.article-sheet {
+  position: relative;
+  background: var(--article-bg);
+  color: var(--article-fg);
+  font-family: var(--article-body);
+  overflow: visible;
+}
+
+.article-sheet::before,
+.article-sheet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.article-body {
+  position: relative;
+  z-index: 2;
+}
+
+.article-sheet[data-layout='vertical'] .article-body {
+  padding: 108px 84px 140px;
+}
+
+.article-sheet[data-layout='horizontal'] .article-body {
+  padding: 72px 120px 96px;
+}
+
+.article-body h1,
+.article-body h2,
+.article-body h3 {
+  font-family: var(--article-head);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  margin: 0 0 22px;
+}
+
+.article-sheet[data-layout='vertical'] .article-body h1 {
+  font-size: 68px;
+}
+
+.article-sheet[data-layout='horizontal'] .article-body h1 {
+  font-size: 54px;
+}
+
+.article-body h2 {
+  font-size: 40px;
+}
+
+.article-body h3 {
+  font-size: 32px;
+}
+
+.article-body p,
+.article-body li {
+  font-size: 32px;
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+
+.article-sheet[data-layout='horizontal'] .article-body p,
+.article-sheet[data-layout='horizontal'] .article-body li {
+  font-size: 28px;
+}
+
+.article-body .kicker {
+  font-family: var(--article-body);
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  color: var(--article-accent);
+  margin-bottom: 28px;
+  font-weight: 600;
+}
+
+.article-body .kicker::before {
+  content: '';
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  margin-right: 10px;
+  margin-bottom: 2px;
+  background: var(--article-accent);
+  vertical-align: middle;
+}
+
+.article-body .byline {
+  color: var(--article-muted);
+  font-size: 26px;
+  margin: 8px 0 28px;
+}
+
+.article-body hr {
+  border: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.16);
+  margin: 8px 0 32px;
+}
+
+.article-sheet.is-dark .article-body hr {
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.article-body ul,
+.article-body ol {
+  margin: 0 0 22px;
+  padding-left: 1.2em;
+}
+
+.article-body blockquote {
+  margin: 0 0 24px;
+  padding: 8px 0 8px 24px;
+  border-left: 3px solid var(--article-accent);
+  color: var(--article-muted);
+}
+
+.md-highlight {
+  font-weight: 700;
+  --hl: 1;
+  background-color: color-mix(in srgb, var(--article-highlight) calc(var(--hl, 1) * 100%), transparent);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0.04em 0.16em;
+  margin: 0 -0.08em;
+  border-radius: 2px;
+}
+
+.texture-newsprint {
+  background-color: var(--article-bg);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(80, 60, 30, 0.045) 2px,
+      rgba(80, 60, 30, 0.045) 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      rgba(40, 30, 10, 0.03) 3px,
+      rgba(40, 30, 10, 0.03) 4px
+    );
+}
+
+.article-sheet[data-theme='newspaper'] .article-body h1 {
+  border-bottom: 3px double rgba(0, 0, 0, 0.55);
+  padding-bottom: 18px;
+}
+
+.texture-parchment::before {
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(120, 70, 20, 0.16), transparent 42%),
+    radial-gradient(ellipse at 88% 78%, rgba(90, 40, 10, 0.18), transparent 46%),
+    radial-gradient(ellipse at 40% 100%, rgba(160, 110, 40, 0.12), transparent 40%);
+  mix-blend-mode: multiply;
+}
+
+.texture-parchment::after {
+  background-image: repeating-linear-gradient(
+    -12deg,
+    transparent,
+    transparent 7px,
+    rgba(90, 50, 10, 0.04) 7px,
+    rgba(90, 50, 10, 0.04) 8px
+  );
+}
+
+.texture-paper::after {
+  opacity: 0.28;
+  background-image: radial-gradient(rgba(90, 70, 40, 0.18) 0.6px, transparent 0.8px);
+  background-size: 3px 3px;
+}
+
+.texture-fiber::after {
+  opacity: 0.22;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 11px,
+    rgba(255, 240, 200, 0.08) 11px,
+    rgba(255, 240, 200, 0.08) 12px
+  );
+}
+
+.article-sheet.theme-ready {
+  min-height: 100%;
+}
