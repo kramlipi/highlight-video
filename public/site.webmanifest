@@ -1,7 +1,7 @@
 {
-  "name": "Highlight Video",
-  "short_name": "Highlight Video",
-  "description": "Turn Markdown into a themed article video. Bold phrases become a yellow highlighter.",
+  "name": "Shotflow",
+  "short_name": "Shotflow",
+  "description": "YouTube creation suite: highlighter videos, karaoke captions, titles, thumbnails, and a publish pack.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#101218",

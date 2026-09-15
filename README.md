@@ -1,17 +1,20 @@
-# Highlight Video
+# Shotflow
 
-Free **Markdown to article video** generator. Paste a `.md` file, wrap key lines in `**bold**`, and export a vertical or horizontal MP4. Bold phrases become a **yellow highlighter** — newspaper, old yellow paper, and dark editorial themes included.
+Free **YouTube creation suite** in the browser. One workflow: script → highlighter B-roll → karaoke captions → titles → thumbnail → publish pack.
 
-**Live app:** [https://highlight-video.cluevion.workers.dev](https://highlight-video.cluevion.workers.dev)
+**Live:** [https://highlight-video.cluevion.workers.dev](https://highlight-video.cluevion.workers.dev)
 
-## What it does
+## Menus
 
-- Markdown in, article video out
-- Yellow highlighter on `**bold**` text
-- Vertical (9:16) or horizontal (16:9)
-- Themes: modern article, newspaper, parchment, dark editorial
-- Motion: highlighter draw, Ken Burns, typewriter, auto-scroll
-- Runs in the browser and exports MP4
+1. **Board** — checklist from idea to upload
+2. **Script** — Markdown episode (bold = highlighter)
+3. **Highlight** — article video, newspaper/parchment themes, MP4 export
+4. **Captions** — paste/upload SRT, EN/HI, live speech, karaoke chunking from `second-pass-srt.py`
+5. **Titles** — YouTube title formulas
+6. **Thumb** — 1280×720 PNG
+7. **Publish** — description, chapters, tags, pinned comment
+
+GPU Whisper (`video_transcriber/transcribe.py`) still runs on your machine. Shotflow takes the SRT or transcript and finishes the upload kit in the browser.
 
 ## Start locally
 
@@ -25,8 +28,5 @@ Open [http://localhost:5173](http://localhost:5173).
 ## Deploy
 
 ```powershell
-npx wrangler login
 npm run deploy
 ```
-
-Do not commit Cloudflare credentials. Wrangler tokens stay in your local user config; `.wrangler/`, `.dev.vars`, and `.env` are gitignored.

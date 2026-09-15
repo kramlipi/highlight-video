@@ -4,8 +4,8 @@
   <rect x="540" y="70" width="300" height="490" rx="12" fill="#ffffff"/>
   <rect x="564" y="160" width="252" height="28" rx="4" fill="#ffe34d"/>
   <rect x="564" y="196" width="210" height="28" rx="4" fill="#ffe34d"/>
-  <text x="88" y="150" fill="#e8c547" font-family="Georgia, serif" font-size="22" letter-spacing="4">MARKDOWN TO VIDEO</text>
-  <text x="88" y="210" fill="#e8eaef" font-family="Georgia, serif" font-size="54">Highlight Video</text>
-  <text x="88" y="270" fill="#9aa3b5" font-family="Segoe UI, sans-serif" font-size="24">Turn Markdown into an article clip.</text>
-  <text x="88" y="310" fill="#9aa3b5" font-family="Segoe UI, sans-serif" font-size="24">Bold phrases get a yellow marker.</text>
+  <text x="88" y="150" fill="#e8c547" font-family="Georgia, serif" font-size="22" letter-spacing="4">YOUTUBE CREATION SUITE</text>
+  <text x="88" y="210" fill="#e8eaef" font-family="Georgia, serif" font-size="54">Shotflow</text>
+  <text x="88" y="270" fill="#9aa3b5" font-family="Segoe UI, sans-serif" font-size="24">Highlighter clips, karaoke captions,</text>
+  <text x="88" y="310" fill="#9aa3b5" font-family="Segoe UI, sans-serif" font-size="24">titles, thumbs, and a publish pack.</text>
 </svg>
