@@ -36,3 +36,9 @@ dist-ssr
 verify-*.png
 export-test/
 scripts/
+
+# Cartoon pipeline local outputs (keep the Python source)
+video-add-cartoon/work/
+video-add-cartoon/**/__pycache__/
+video-add-cartoon/.venv/
+video-add-cartoon/video-overlay-tool/work/

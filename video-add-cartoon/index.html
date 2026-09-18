@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Pipeline — Trim, Cartoon, Subtitles</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --surface: #151c27;
+      --surface2: #1c2636;
+      --border: #2a374a;
+      --accent: #6ea8ff;
+      --accent-dim: #4a7fd4;
+      --text: #eef3fb;
+      --muted: #8fa3bf;
+      --success: #4ade80;
+      --error: #f87171;
+      --step-active: #6ea8ff;
+      --step-done: #4ade80;
+      --step-pending: #3d4f66;
+      --step-skip: #5a6a80;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(ellipse at 20% 0%, #1a2a44 0%, var(--bg) 60%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(1100px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 32px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.55rem;
+      font-weight: 650;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 26px;
+      line-height: 1.55;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    @media (min-width: 900px) {
+      .options { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (max-width: 720px) {
+      .options { grid-template-columns: 1fr; }
+    }
+
+    .option {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      user-select: none;
+    }
+
+    .option:hover {
+      border-color: var(--accent-dim);
+    }
+
+    .option.on {
+      border-color: rgba(110, 168, 255, 0.55);
+      background: rgba(110, 168, 255, 0.08);
+    }
+
+    .option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .toggle {
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: var(--step-pending);
+      position: relative;
+      flex-shrink: 0;
+      margin-top: 2px;
+      transition: background 0.2s;
+    }
+
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
+    }
+
+    .option.on .toggle {
+      background: var(--accent);
+    }
+
+    .option.on .toggle::after {
+      transform: translateX(18px);
+    }
+
+    .option-text {
+      min-width: 0;
+    }
+
+    .option-title {
+      font-weight: 650;
+      font-size: 0.95rem;
+      margin-bottom: 3px;
+    }
+
+    .option-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .options-hint {
+      margin: -10px 0 20px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 44px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(110, 168, 255, 0.07);
+    }
+
+    .dropzone svg {
+      width: 52px;
+      height: 52px;
+      margin-bottom: 14px;
+      opacity: 0.75;
+    }
+
+    .dropzone p { margin: 0; }
+    .dropzone .hint { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+
+    input[type="file"] { display: none; }
+
+    .local-path {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(110, 168, 255, 0.08);
+      border: 1px solid rgba(110, 168, 255, 0.35);
+    }
+
+    .local-path h3 {
+      margin: 0 0 6px;
+      font-size: 0.95rem;
+      font-weight: 650;
+    }
+
+    .local-path p {
+      margin: 0 0 12px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .local-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .local-row input[type="text"] {
+      flex: 1;
+      min-width: 220px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.28);
+      color: var(--text);
+      padding: 11px 12px;
+      font-size: 0.9rem;
+    }
+
+    .local-row input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .local-row button {
+      appearance: none;
+      border: none;
+      border-radius: 9px;
+      padding: 11px 18px;
+      font-size: 0.92rem;
+      font-weight: 650;
+      cursor: pointer;
+      background: var(--accent);
+      color: #0a1628;
+    }
+
+    .local-row button:hover {
+      background: #8bbcff;
+    }
+
+    .or-divider {
+      margin: 16px 0 8px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .steps {
+      margin-top: 22px;
+      display: none;
+      gap: 12px;
+    }
+
+    .steps.visible {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+
+    .step.skipped {
+      opacity: 0.55;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      background: var(--step-pending);
+      color: var(--muted);
+    }
+
+    .step.active .step-num {
+      background: var(--step-active);
+      color: #0a1628;
+    }
+
+    .step.done .step-num {
+      background: var(--step-done);
+      color: #052e16;
+    }
+
+    .step.skipped .step-num {
+      background: var(--step-skip);
+      color: #c5d0e0;
+    }
+
+    .step-body { flex: 1; min-width: 0; }
+
+    .step-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .step-detail {
+      font-size: 0.84rem;
+      color: var(--muted);
+      word-break: break-word;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    .status.visible { display: block; }
+
+    .status-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 9px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0 12px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+      border-radius: 999px;
+      transition: width 0.35s ease;
+    }
+
+    .message {
+      font-size: 0.9rem;
+      color: var(--muted);
+      word-break: break-word;
+    }
+
+    .message.error { color: var(--error); }
+    .message.success { color: var(--success); }
+
+    .output-path {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--success);
+      word-break: break-all;
+    }
+
+    .output-path code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 0.82rem;
+    }
+
+    .actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    a.download {
+      appearance: none;
+      border: none;
+      border-radius: 9px;
+      padding: 11px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--success);
+      color: #052e16;
+    }
+
+    .specs {
+      margin-top: 22px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .specs code {
+      background: rgba(0, 0, 0, 0.28);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .health-warn {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      color: var(--error);
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .health-warn.visible { display: block; }
+
+    .comparison {
+      margin-top: 24px;
+      display: none;
+    }
+
+    .comparison.visible { display: block; }
+
+    .comparison h2 {
+      margin: 0 0 14px;
+      font-size: 1.15rem;
+      font-weight: 650;
+    }
+
+    .trim-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+
+    .stat-box.highlight {
+      border-color: var(--success);
+      background: rgba(74, 222, 128, 0.08);
+    }
+
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .stat-box.highlight .stat-value { color: var(--success); }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .compare-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 720px) {
+      .compare-row { grid-template-columns: 1fr; }
+    }
+
+    .compare-panel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .compare-panel.hidden { display: none; }
+
+    .compare-panel.final-panel {
+      grid-column: 1 / -1;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .compare-label {
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.25);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .compare-meta {
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .compare-panel video {
+      width: 100%;
+      display: block;
+      background: #000;
+      max-height: 320px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Video Processing Pipeline</h1>
+    <p class="subtitle">
+      Toggle each step separately: remove silence, remove still frames,
+      add a talking cartoon, and/or burn in subtitles.
+    </p>
+
+    <div class="options" id="options">
+      <label class="option on" id="optSilence">
+        <input type="checkbox" id="silenceToggle" checked />
+        <span class="toggle" aria-hidden="true"></span>
+        <span class="option-text">
+          <span class="option-title">Remove silence</span>
+          <span class="option-desc">Cut only when there is no voice / no audio</span>
+        </span>
+      </label>
+      <label class="option" id="optStill">
+        <input type="checkbox" id="stillToggle" />
+        <span class="toggle" aria-hidden="true"></span>
+        <span class="option-text">
+          <span class="option-title">Remove still frames</span>
+          <span class="option-desc">pHash dedup — cut when the picture stays frozen</span>
+        </span>
+      </label>
+      <label class="option on" id="optCartoon">
+        <input type="checkbox" id="cartoonToggle" checked />
+        <span class="toggle" aria-hidden="true"></span>
+        <span class="option-text">
+          <span class="option-title">Talking cartoon</span>
+          <span class="option-desc">Oval chromakey face overlay in the corner</span>
+        </span>
+      </label>
+      <label class="option on" id="optSubtitles">
+        <input type="checkbox" id="subtitlesToggle" checked />
+        <span class="toggle" aria-hidden="true"></span>
+        <span class="option-text">
+          <span class="option-title">Subtitles</span>
+          <span class="option-desc">Whisper transcription burned into the video</span>
+        </span>
+      </label>
+    </div>
+    <p class="options-hint" id="optionsHint">All steps enabled — use a local path for large videos.</p>
+
+    <div class="local-path">
+      <h3>Local file path (recommended for 4GB videos)</h3>
+      <p>
+        Paste the full path to your video on this PC. The server reads it from disk —
+        no browser upload. Example:
+        <code>D:\Videos\my-recording.mp4</code>
+      </p>
+      <div class="local-row">
+        <input type="text" id="localPathInput" placeholder="D:\path\to\video.mp4" spellcheck="false" />
+        <button type="button" id="localPathBtn">Process local file</button>
+      </div>
+    </div>
+
+    <div class="or-divider">or small file upload</div>
+
+    <label class="dropzone" id="dropzone" for="fileInput">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p><strong>Drop a small video here</strong> or click to browse</p>
+      <p class="hint">Best under ~400 MB. For 4GB files, use the path box above.</p>
+    </label>
+    <input type="file" id="fileInput" accept="video/*" />
+
+    <div class="health-warn" id="healthWarn"></div>
+
+    <div class="steps" id="steps">
+      <div class="step" id="stepSilence" data-step="silence">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Remove silence</div>
+          <div class="step-detail" id="stepSilenceDetail">Waiting…</div>
+        </div>
+      </div>
+      <div class="step" id="stepStill" data-step="still">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Remove still frames</div>
+          <div class="step-detail" id="stepStillDetail">Waiting…</div>
+        </div>
+      </div>
+      <div class="step" id="stepCartoon" data-step="cartoon">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Talking cartoon</div>
+          <div class="step-detail" id="stepCartoonDetail">Waiting…</div>
+        </div>
+      </div>
+      <div class="step" id="stepSubtitles" data-step="subtitles">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Subtitles</div>
+          <div class="step-detail" id="stepSubtitlesDetail">Waiting…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status" id="status">
+      <div class="status-label">Overall progress</div>
+      <div id="fileName"></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="message" id="message">Waiting…</div>
+      <div class="output-path" id="outputPath"></div>
+      <div class="actions" id="actions"></div>
+    </div>
+
+    <div class="comparison" id="comparison">
+      <h2>Result comparison</h2>
+      <div class="trim-stats" id="trimStats"></div>
+      <div class="compare-row">
+        <div class="compare-panel" id="originalPanel">
+          <div class="compare-label">
+            Original
+            <span class="compare-meta" id="originalMeta"></span>
+          </div>
+          <video id="originalVideo" controls></video>
+        </div>
+        <div class="compare-panel" id="trimmedPanel">
+          <div class="compare-label">
+            After trim
+            <span class="compare-meta" id="trimmedMeta"></span>
+          </div>
+          <video id="trimmedVideo" controls></video>
+        </div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-panel final-panel">
+          <div class="compare-label">
+            Final output
+            <span class="compare-meta" id="finalMeta"></span>
+          </div>
+          <video id="finalVideo" controls></video>
+        </div>
+      </div>
+    </div>
+
+    <div class="specs">
+      Output: <code id="outputDirHint">video_tutorial/{name}_final.mp4</code><br>
+      Toggle steps above, then drop a video — only selected steps run<br>
+      Start: <code>RUN.bat</code> (Windows) or <code>./RUN</code> (Linux)
+    </div>
+  </div>
+
+  <script>
+    // Always talk to the Flask server (port 8765), even if this page was opened
+    // via Live Preview / another static server that would return HTML for /api/*.
+    const API_BASE =
+      (window.location.port === "8765" && /^https?:$/.test(window.location.protocol))
+        ? ""
+        : "http://127.0.0.1:8765";
+
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("fileInput");
+    const statusEl = document.getElementById("status");
+    const stepsEl = document.getElementById("steps");
+    const stepSilence = document.getElementById("stepSilence");
+    const stepStill = document.getElementById("stepStill");
+    const stepCartoon = document.getElementById("stepCartoon");
+    const stepSubtitles = document.getElementById("stepSubtitles");
+    const stepSilenceDetail = document.getElementById("stepSilenceDetail");
+    const stepStillDetail = document.getElementById("stepStillDetail");
+    const stepCartoonDetail = document.getElementById("stepCartoonDetail");
+    const stepSubtitlesDetail = document.getElementById("stepSubtitlesDetail");
+    const progressFill = document.getElementById("progressFill");
+    const messageEl = document.getElementById("message");
+    const fileNameEl = document.getElementById("fileName");
+    const outputPathEl = document.getElementById("outputPath");
+    const actionsEl = document.getElementById("actions");
+    const healthWarn = document.getElementById("healthWarn");
+    const comparisonEl = document.getElementById("comparison");
+    const trimStatsEl = document.getElementById("trimStats");
+    const originalVideo = document.getElementById("originalVideo");
+    const trimmedVideo = document.getElementById("trimmedVideo");
+    const finalVideo = document.getElementById("finalVideo");
+    const originalMeta = document.getElementById("originalMeta");
+    const trimmedMeta = document.getElementById("trimmedMeta");
+    const finalMeta = document.getElementById("finalMeta");
+    const trimmedPanel = document.getElementById("trimmedPanel");
+    const optionsHint = document.getElementById("optionsHint");
+    const silenceToggle = document.getElementById("silenceToggle");
+    const stillToggle = document.getElementById("stillToggle");
+    const cartoonToggle = document.getElementById("cartoonToggle");
+    const subtitlesToggle = document.getElementById("subtitlesToggle");
+    const optSilence = document.getElementById("optSilence");
+    const optStill = document.getElementById("optStill");
+    const optCartoon = document.getElementById("optCartoon");
+    const optSubtitles = document.getElementById("optSubtitles");
+
+    const localPathInput = document.getElementById("localPathInput");
+    const localPathBtn = document.getElementById("localPathBtn");
+
+    let pollTimer = null;
+    let activeJobId = null;
+    let healthInfo = null;
+    let selectedOptions = { silence: true, still: false, cartoon: true, subtitles: true };
+
+    async function readJson(res) {
+      const text = await res.text();
+      const trimmed = text.trim();
+      if (!trimmed) {
+        throw new Error(`Empty response from server (HTTP ${res.status})`);
+      }
+      if (trimmed.startsWith("<!") || trimmed.startsWith("<html") || trimmed.startsWith("<HTML")) {
+        throw new Error(
+          `Server returned HTML instead of JSON (HTTP ${res.status}). ` +
+          `Open the app at http://127.0.0.1:8765/ (run RUN.bat) — do not open index.html directly.`
+        );
+      }
+      try {
+        return JSON.parse(trimmed);
+      } catch (_err) {
+        throw new Error(`Invalid server response (HTTP ${res.status}): ${trimmed.slice(0, 120)}`);
+      }
+    }
+
+    function apiUrl(path) {
+      return `${API_BASE}${path}`;
+    }
+
+    function getOptions() {
+      return {
+        silence: silenceToggle.checked,
+        still: stillToggle.checked,
+        cartoon: cartoonToggle.checked,
+        subtitles: subtitlesToggle.checked,
+      };
+    }
+
+    function syncOptionCards() {
+      const opts = getOptions();
+      optSilence.classList.toggle("on", opts.silence);
+      optStill.classList.toggle("on", opts.still);
+      optCartoon.classList.toggle("on", opts.cartoon);
+      optSubtitles.classList.toggle("on", opts.subtitles);
+
+      const labels = [];
+      if (opts.silence) labels.push("silence");
+      if (opts.still) labels.push("still frames");
+      if (opts.cartoon) labels.push("cartoon");
+      if (opts.subtitles) labels.push("subtitles");
+
+      if (!labels.length) {
+        optionsHint.textContent = "Select at least one option before starting.";
+        optionsHint.style.color = "var(--error)";
+      } else if (labels.length === 4) {
+        optionsHint.textContent = "All steps enabled — use a local path for large videos.";
+        optionsHint.style.color = "";
+      } else {
+        optionsHint.textContent = `Will run: ${labels.join(" → ")}.`;
+        optionsHint.style.color = "";
+      }
+      updateHealthWarnings();
+    }
+
+    [silenceToggle, stillToggle, cartoonToggle, subtitlesToggle].forEach((el) => {
+      el.addEventListener("change", syncOptionCards);
+    });
+
+    ["dragenter", "dragover"].forEach((evt) => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((evt) => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("dragover");
+      });
+    });
+
+    dropzone.addEventListener("drop", (e) => {
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (file) handleFile(file);
+    });
+
+    function setStatus(text, type = "") {
+      messageEl.textContent = text;
+      messageEl.className = "message" + (type ? ` ${type}` : "");
+    }
+
+    function resetStepUi(opts) {
+      const map = [
+        [stepSilence, stepSilenceDetail, opts.silence],
+        [stepStill, stepStillDetail, opts.still],
+        [stepCartoon, stepCartoonDetail, opts.cartoon],
+        [stepSubtitles, stepSubtitlesDetail, opts.subtitles],
+      ];
+      map.forEach(([el, detail, enabled], i) => {
+        el.className = "step" + (enabled ? "" : " skipped");
+        el.querySelector(".step-num").textContent = String(i + 1);
+        detail.textContent = enabled ? "Waiting…" : "Skipped";
+      });
+    }
+
+    function updateSteps(job) {
+      const opts = job.options || selectedOptions;
+      const stepName = job.step_name || "";
+      const done = job.status === "done";
+      const processing = job.status === "processing" || job.status === "queued";
+
+      const defs = [
+        {
+          el: stepSilence,
+          detail: stepSilenceDetail,
+          key: "silence",
+          doneMsg: job.intermediate_name && opts.silence && !opts.still
+            ? `Done → ${job.intermediate_name}`
+            : "Silence removed",
+          activeMsg: "Removing silence…",
+        },
+        {
+          el: stepStill,
+          detail: stepStillDetail,
+          key: "still",
+          doneMsg: job.intermediate_name ? `Done → ${job.intermediate_name}` : "Still frames removed",
+          activeMsg: "Removing still frames…",
+        },
+        {
+          el: stepCartoon,
+          detail: stepCartoonDetail,
+          key: "cartoon",
+          doneMsg: "Cartoon applied",
+          activeMsg: "Applying overlay…",
+        },
+        {
+          el: stepSubtitles,
+          detail: stepSubtitlesDetail,
+          key: "subtitles",
+          doneMsg: "Subtitles burned in",
+          activeMsg: "Generating subtitles…",
+        },
+      ];
+
+      const enabledKeys = defs.filter((d) => opts[d.key]).map((d) => d.key);
+      const currentIdx = enabledKeys.indexOf(stepName);
+
+      defs.forEach((d) => {
+        const enabled = !!opts[d.key];
+        d.el.classList.remove("active", "done", "skipped");
+        if (!enabled) {
+          d.el.classList.add("skipped");
+          d.detail.textContent = "Skipped";
+          return;
+        }
+
+        const keyIdx = enabledKeys.indexOf(d.key);
+        if (done) {
+          d.el.classList.add("done");
+          d.detail.textContent = d.doneMsg;
+        } else if (processing && stepName === d.key) {
+          d.el.classList.add("active");
+          d.detail.textContent = job.message || d.activeMsg;
+        } else if (processing && currentIdx > keyIdx && keyIdx >= 0) {
+          d.el.classList.add("done");
+          d.detail.textContent = d.doneMsg;
+        } else {
+          d.detail.textContent = "Waiting…";
+        }
+      });
+    }
+
+    function formatStat(value, label, highlight = false) {
+      const box = document.createElement("div");
+      box.className = "stat-box" + (highlight ? " highlight" : "");
+      box.innerHTML = `<div class="stat-value">${value}</div><div class="stat-label">${label}</div>`;
+      return box;
+    }
+
+    function showComparison(jobId, job) {
+      comparisonEl.classList.add("visible");
+      trimStatsEl.innerHTML = "";
+      const opts = job.options || selectedOptions;
+
+      trimStatsEl.appendChild(formatStat(job.original_duration_fmt || "?", "Original"));
+      if (opts.silence || opts.still) {
+        trimStatsEl.appendChild(formatStat(job.trimmed_duration_fmt || "?", "Trimmed"));
+        trimStatsEl.appendChild(formatStat(job.time_saved_fmt || "?", "Time saved", true));
+        const pct = job.percent_trimmed != null ? `${job.percent_trimmed}%` : "?";
+        trimStatsEl.appendChild(formatStat(pct, "Trimmed", true));
+        trimStatsEl.appendChild(formatStat(job.original_size_fmt || "?", "Original size"));
+        trimStatsEl.appendChild(formatStat(job.trimmed_size_fmt || "?", "Trimmed size"));
+      } else {
+        trimStatsEl.appendChild(formatStat(job.final_duration_fmt || "?", "Final"));
+        trimStatsEl.appendChild(formatStat(job.final_size_fmt || "?", "Final size"));
+      }
+
+      originalMeta.textContent = `${job.original_duration_fmt || "?"} · ${job.original_size_fmt || "?"}`;
+      finalMeta.textContent = `${job.final_duration_fmt || "?"} · ${job.final_size_fmt || "?"}`;
+
+      originalVideo.src = apiUrl(`/api/play/${jobId}/original`);
+      finalVideo.src = apiUrl(`/api/play/${jobId}/final`);
+
+      if ((opts.silence || opts.still) && job.silencetrim_path) {
+        trimmedPanel.classList.remove("hidden");
+        trimmedMeta.textContent = `${job.trimmed_duration_fmt || "?"} · ${job.trimmed_size_fmt || "?"}`;
+        trimmedVideo.src = apiUrl(`/api/play/${jobId}/silencetrim`);
+      } else {
+        trimmedPanel.classList.add("hidden");
+        trimmedVideo.removeAttribute("src");
+      }
+    }
+
+    function beginUi(label) {
+      if (pollTimer) clearInterval(pollTimer);
+      actionsEl.innerHTML = "";
+      outputPathEl.textContent = "";
+      comparisonEl.classList.remove("visible");
+      trimStatsEl.innerHTML = "";
+      originalVideo.removeAttribute("src");
+      trimmedVideo.removeAttribute("src");
+      finalVideo.removeAttribute("src");
+      trimmedPanel.classList.remove("hidden");
+      activeJobId = null;
+      statusEl.classList.add("visible");
+      stepsEl.classList.add("visible");
+      fileNameEl.textContent = label;
+      progressFill.style.width = "0%";
+      resetStepUi(selectedOptions);
+    }
+
+    async function startJob(formOrPayload, label, isJson = false) {
+      selectedOptions = getOptions();
+      beginUi(label);
+      setStatus(isJson ? "Starting from local path…" : "Uploading…");
+
+      try {
+        const res = await fetch(
+          apiUrl("/api/process"),
+          isJson
+            ? {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formOrPayload),
+              }
+            : { method: "POST", body: formOrPayload }
+        );
+        const data = await readJson(res);
+        if (!res.ok) throw new Error(data.error || `Start failed (HTTP ${res.status})`);
+
+        activeJobId = data.job_id;
+        if (data.options) selectedOptions = data.options;
+        setStatus(data.source_mode === "local_path" ? "Processing from disk…" : "Processing…");
+        pollTimer = setInterval(() => pollStatus(data.job_id), 800);
+      } catch (err) {
+        setStatus(err.message, "error");
+      }
+    }
+
+    async function handleFile(file) {
+      const opts = getOptions();
+      if (!opts.silence && !opts.still && !opts.cartoon && !opts.subtitles) {
+        statusEl.classList.add("visible");
+        setStatus("Select at least one option first.", "error");
+        return;
+      }
+
+      if (file.size > 400 * 1024 * 1024) {
+        statusEl.classList.add("visible");
+        setStatus(
+          `This file is ${(file.size / (1024 ** 3)).toFixed(2)} GB. ` +
+            "Paste its full path in “Local file path” instead of uploading.",
+          "error"
+        );
+        localPathInput.value = localPathInput.value || file.name;
+        localPathInput.focus();
+        return;
+      }
+
+      const form = new FormData();
+      form.append("video", file);
+      form.append("silence", opts.silence ? "true" : "false");
+      form.append("still", opts.still ? "true" : "false");
+      form.append("cartoon", opts.cartoon ? "true" : "false");
+      form.append("subtitles", opts.subtitles ? "true" : "false");
+      await startJob(form, file.name, false);
+    }
+
+    async function handleLocalPath() {
+      const opts = getOptions();
+      if (!opts.silence && !opts.still && !opts.cartoon && !opts.subtitles) {
+        statusEl.classList.add("visible");
+        setStatus("Select at least one option first.", "error");
+        return;
+      }
+      const path = (localPathInput.value || "").trim();
+      if (!path) {
+        statusEl.classList.add("visible");
+        setStatus("Paste the full path to your video first.", "error");
+        localPathInput.focus();
+        return;
+      }
+      await startJob(
+        {
+          local_path: path,
+          silence: opts.silence,
+          still: opts.still,
+          cartoon: opts.cartoon,
+          subtitles: opts.subtitles,
+        },
+        path,
+        true
+      );
+    }
+
+    localPathBtn.addEventListener("click", handleLocalPath);
+    localPathInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleLocalPath();
+      }
+    });
+
+    async function pollStatus(jobId) {
+      try {
+        const res = await fetch(apiUrl(`/api/status/${jobId}`));
+        const job = await readJson(res);
+        if (!res.ok) throw new Error(job.error || "Status check failed");
+
+        progressFill.style.width = `${job.progress || 0}%`;
+        setStatus(job.message || job.status);
+        updateSteps(job);
+
+        if (job.status === "done") {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          setStatus("Pipeline complete!", "success");
+          const outPath = job.final_path_display || job.output_path_display || job.output_path || "";
+          outputPathEl.innerHTML = outPath
+            ? `Saved to: <code>${outPath}</code>`
+            : "";
+
+          showComparison(jobId, job);
+
+          actionsEl.innerHTML = "";
+          const link = document.createElement("a");
+          link.className = "download";
+          link.href = apiUrl(`/api/download/${jobId}`);
+          link.download = job.output_name || "output.mp4";
+          link.textContent = "Download final video";
+          actionsEl.appendChild(link);
+        }
+
+        if (job.status === "error") {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          setStatus(job.message || "Processing failed", "error");
+        }
+      } catch (err) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        setStatus(err.message, "error");
+      }
+    }
+
+    function updateHealthWarnings() {
+      if (!healthInfo) return;
+      const opts = getOptions();
+      const warnings = [];
+      if (!healthInfo.ffmpeg) warnings.push("ffmpeg not found on PATH");
+      if (!healthInfo.ffprobe) warnings.push("ffprobe not found on PATH");
+      if (opts.silence && !healthInfo.auto_editor) {
+        warnings.push("auto-editor not found (needed for silence remove — run setup)");
+      }
+      if (opts.still && !healthInfo.still_trim_available) {
+        warnings.push("opencv/ImageHash not installed (needed for still-frame remove — run setup)");
+      }
+      if (opts.cartoon && !healthInfo.cartoon_exists) {
+        warnings.push(`Cartoon missing: ${healthInfo.cartoon_path}`);
+      }
+      if (opts.subtitles && !healthInfo.whisper_available) {
+        warnings.push("Whisper not installed (needed for subtitles — run setup)");
+      }
+      if (warnings.length) {
+        healthWarn.textContent = warnings.join(" · ");
+        healthWarn.classList.add("visible");
+      } else {
+        healthWarn.textContent = "";
+        healthWarn.classList.remove("visible");
+      }
+    }
+
+    fetch(apiUrl("/api/health"))
+      .then(async (r) => {
+        const h = await readJson(r);
+        healthInfo = h;
+        updateHealthWarnings();
+        if (h.output_dir) {
+          document.getElementById("outputDirHint").textContent =
+            `${h.output_dir}/{name}_final.mp4`;
+        }
+        if (API_BASE) {
+          optionsHint.textContent =
+            `Connected to Flask at ${API_BASE}. Prefer opening http://127.0.0.1:8765/ directly.`;
+        }
+      })
+      .catch((err) => {
+        healthWarn.textContent =
+          (err && err.message) ||
+          "Cannot reach server. Run RUN.bat or ./RUN, then open http://127.0.0.1:8765/";
+        healthWarn.classList.add("visible");
+      });
+
+    syncOptionCards();
+  </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "name": "Shotflow",
   "short_name": "Shotflow",
-  "description": "YouTube creation suite: highlighter videos, karaoke captions, titles, thumbnails, and a publish pack.",
+  "description": "YouTube creation suite: pick highlighter videos, cartoon cuts, karaoke captions, titles, thumbnails, and a publish pack.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#101218",

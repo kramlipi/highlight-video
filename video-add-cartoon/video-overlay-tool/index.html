@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cartoon Face Video Overlay</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4f;
+      --accent: #5b9cff;
+      --accent-dim: #3d6fb3;
+      --text: #e8eef7;
+      --muted: #8fa3bf;
+      --success: #4ade80;
+      --error: #f87171;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(ellipse at top, #1a2740 0%, var(--bg) 55%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(640px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.5rem;
+      font-weight: 650;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(91, 156, 255, 0.08);
+    }
+
+    .dropzone svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      opacity: 0.7;
+    }
+
+    .dropzone p { margin: 0; }
+    .dropzone .hint { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+
+    input[type="file"] { display: none; }
+
+    .status {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    .status.visible { display: block; }
+
+    .status-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    .message {
+      font-size: 0.9rem;
+      color: var(--muted);
+      word-break: break-word;
+    }
+
+    .message.error { color: var(--error); }
+    .message.success { color: var(--success); }
+
+    .actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button, a.download {
+      appearance: none;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0a1628;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    a.download {
+      background: var(--success);
+      color: #052e16;
+    }
+
+    .preview {
+      margin-top: 16px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+      display: none;
+    }
+
+    .preview.visible { display: block; }
+
+    video {
+      width: 100%;
+      max-height: 240px;
+      display: block;
+    }
+
+    .specs {
+      margin-top: 20px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .specs code {
+      background: rgba(0, 0, 0, 0.25);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Cartoon Face Overlay</h1>
+    <p class="subtitle">
+      Drop a video to add a cartoon face in an oval at the bottom-right corner
+      (15% of video width, ~2.5% padding).
+    </p>
+
+    <label class="dropzone" id="dropzone" for="fileInput">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p><strong>Drop video here</strong> or click to browse</p>
+      <p class="hint">MP4, MOV, WebM, MKV</p>
+    </label>
+    <input type="file" id="fileInput" accept="video/*" />
+
+    <div class="preview" id="preview">
+      <video id="previewVideo" controls muted></video>
+    </div>
+
+    <div class="status" id="status">
+      <div class="status-label">Processing</div>
+      <div id="fileName"></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="message" id="message">Waiting…</div>
+      <div class="actions" id="actions"></div>
+    </div>
+
+    <div class="specs">
+      Overlay: oval cartoon from <code>cartoon.mp4</code> · size = 15% of input width ·
+      position = bottom-right · requires local server (<code>python server.py</code>)
+    </div>
+  </div>
+
+  <script>
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("fileInput");
+    const statusEl = document.getElementById("status");
+    const progressFill = document.getElementById("progressFill");
+    const messageEl = document.getElementById("message");
+    const fileNameEl = document.getElementById("fileName");
+    const actionsEl = document.getElementById("actions");
+    const previewEl = document.getElementById("preview");
+    const previewVideo = document.getElementById("previewVideo");
+
+    let pollTimer = null;
+
+    ["dragenter", "dragover"].forEach((evt) => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((evt) => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("dragover");
+      });
+    });
+
+    dropzone.addEventListener("drop", (e) => {
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (file) handleFile(file);
+    });
+
+    function showPreview(file) {
+      const url = URL.createObjectURL(file);
+      previewVideo.src = url;
+      previewEl.classList.add("visible");
+    }
+
+    function setStatus(text, type = "") {
+      messageEl.textContent = text;
+      messageEl.className = "message" + (type ? ` ${type}` : "");
+    }
+
+    async function handleFile(file) {
+      if (pollTimer) clearInterval(pollTimer);
+      actionsEl.innerHTML = "";
+      statusEl.classList.add("visible");
+      fileNameEl.textContent = file.name;
+      progressFill.style.width = "0%";
+      setStatus("Uploading…");
+      showPreview(file);
+
+      const form = new FormData();
+      form.append("video", file);
+
+      try {
+        const res = await fetch("/api/process", { method: "POST", body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Upload failed");
+
+        setStatus("Processing video…");
+        pollTimer = setInterval(() => pollStatus(data.job_id), 800);
+      } catch (err) {
+        setStatus(err.message, "error");
+      }
+    }
+
+    async function pollStatus(jobId) {
+      try {
+        const res = await fetch(`/api/status/${jobId}`);
+        const job = await res.json();
+        if (!res.ok) throw new Error(job.error || "Status check failed");
+
+        progressFill.style.width = `${job.progress || 0}%`;
+        setStatus(job.message || job.status);
+
+        if (job.status === "done") {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          setStatus("Overlay complete — download your video.", "success");
+          actionsEl.innerHTML = "";
+          const link = document.createElement("a");
+          link.className = "download";
+          link.href = `/api/download/${jobId}`;
+          link.download = job.output_name || "output.mp4";
+          link.textContent = "Download output";
+          actionsEl.appendChild(link);
+        }
+
+        if (job.status === "error") {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          setStatus(job.message || "Processing failed", "error");
+        }
+      } catch (err) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        setStatus(err.message, "error");
+      }
+    }
+
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((h) => {
+        if (!h.cartoon_exists) {
+          setStatus(`Warning: cartoon source missing at ${h.cartoon_path}`, "error");
+          statusEl.classList.add("visible");
+        }
+      })
+      .catch(() => {
+        setStatus("Cannot reach server. Run: python server.py", "error");
+        statusEl.classList.add("visible");
+      });
+  </script>
+</body>
+</html>

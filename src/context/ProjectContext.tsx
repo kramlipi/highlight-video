@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { SAMPLE_MARKDOWN } from '../lib/sample'
-import type { ProjectState, ToolId } from '../lib/project'
+import { DEFAULT_CUT, TOOL_IDS, type ProjectState, type ToolId } from '../lib/project'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-const STORAGE_KEY = 'shotflow-project-v1'
+const STORAGE_KEY = 'shotflow-project-v2'
 
 const defaults: ProjectState = {
   markdown: SAMPLE_MARKDOWN,
@@ -13,6 +13,7 @@ const defaults: ProjectState = {
   workingTitle: '',
   pinnedComment: '',
   hook: '',
+  cut: DEFAULT_CUT,
 }
 
 type ProjectContextValue = {
@@ -26,9 +27,10 @@ const ProjectContext = createContext<ProjectContextValue | null>(null)
 
 function readStored(): ProjectState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem('shotflow-project-v1')
     if (!raw) return defaults
-    return { ...defaults, ...JSON.parse(raw) }
+    const parsed = JSON.parse(raw) as Partial<ProjectState>
+    return { ...defaults, ...parsed, cut: { ...DEFAULT_CUT, ...parsed.cut } }
   } catch {
     return defaults
   }
@@ -38,11 +40,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [project, setProject] = useState<ProjectState>(readStored)
   const [tool, setTool] = useState<ToolId>(() => {
     const hash = window.location.hash.replace('#', '') as ToolId
-    return (
-      ['board', 'script', 'highlight', 'captions', 'titles', 'thumb', 'publish'] as ToolId[]
-    ).includes(hash)
-      ? hash
-      : 'board'
+    return TOOL_IDS.includes(hash) ? hash : 'board'
   })
 
   useEffect(() => {
@@ -52,6 +50,15 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     window.location.hash = tool
   }, [tool])
+
+  useEffect(() => {
+    const onHash = () => {
+      const hash = window.location.hash.replace('#', '') as ToolId
+      if (TOOL_IDS.includes(hash)) setTool(hash)
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
 
   const value = useMemo(
     () => ({

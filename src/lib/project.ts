@@ -2,12 +2,20 @@ export type ToolId =
   | 'board'
   | 'script'
   | 'highlight'
+  | 'cartoon'
   | 'captions'
   | 'titles'
   | 'thumb'
   | 'publish'
 
 export type CaptionLang = 'en' | 'hi'
+
+export type CutOptions = {
+  silence: boolean
+  still: boolean
+  cartoon: boolean
+  subtitles: boolean
+}
 
 export type ProjectState = {
   markdown: string
@@ -18,14 +26,32 @@ export type ProjectState = {
   workingTitle: string
   pinnedComment: string
   hook: string
+  cut: CutOptions
 }
 
-export const TOOLS: { id: ToolId; label: string; blurb: string }[] = [
-  { id: 'board', label: 'Board', blurb: 'One workflow from idea to upload pack' },
-  { id: 'script', label: 'Script', blurb: 'Write the episode in Markdown' },
-  { id: 'highlight', label: 'Highlight', blurb: 'Article clip with yellow marker' },
-  { id: 'captions', label: 'Captions', blurb: 'SRT, karaoke chunks, live speech' },
-  { id: 'titles', label: 'Titles', blurb: 'YouTube title formulas' },
-  { id: 'thumb', label: 'Thumb', blurb: '1280×720 thumbnail card' },
-  { id: 'publish', label: 'Publish', blurb: 'Description, chapters, tags, pack' },
+export type ToolMeta = {
+  id: ToolId
+  label: string
+  blurb: string
+  group: string
+}
+
+export const TOOLS: ToolMeta[] = [
+  { id: 'board', label: 'Choose', blurb: 'Pick the job you want to do', group: 'Start' },
+  { id: 'script', label: 'Script', blurb: 'Write the episode in Markdown', group: 'Write' },
+  { id: 'titles', label: 'Titles', blurb: 'YouTube title formulas', group: 'Write' },
+  { id: 'highlight', label: 'Highlight', blurb: 'Article clip with yellow marker', group: 'Picture' },
+  { id: 'cartoon', label: 'Cartoon cut', blurb: 'Silence, stills, talking face, subs', group: 'Picture' },
+  { id: 'thumb', label: 'Thumb', blurb: '1280×720 thumbnail card', group: 'Picture' },
+  { id: 'captions', label: 'Captions', blurb: 'SRT, karaoke chunks, live speech', group: 'Audio' },
+  { id: 'publish', label: 'Publish', blurb: 'Description, chapters, tags, pack', group: 'Ship' },
 ]
+
+export const TOOL_IDS = TOOLS.map((tool) => tool.id)
+
+export const DEFAULT_CUT: CutOptions = {
+  silence: true,
+  still: false,
+  cartoon: true,
+  subtitles: true,
+}
