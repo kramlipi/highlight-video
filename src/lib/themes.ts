@@ -51,25 +51,67 @@ export const THEME_PRESETS: ThemePreset[] = [
   },
 ]
 
-export const FONT_OPTIONS = [
-  { id: 'playfair', label: 'Playfair Display', value: '"Playfair Display", Georgia, serif' },
-  { id: 'newsreader', label: 'Newsreader', value: '"Newsreader", "Times New Roman", serif' },
-  { id: 'garamond', label: 'EB Garamond', value: '"EB Garamond", Georgia, serif' },
-  { id: 'baskerville', label: 'Libre Baskerville', value: '"Libre Baskerville", Georgia, serif' },
-  { id: 'source-serif', label: 'Source Serif 4', value: '"Source Serif 4", Georgia, serif' },
-  { id: 'source-sans', label: 'Source Sans 3', value: '"Source Sans 3", "Segoe UI", sans-serif' },
-  { id: 'inter', label: 'Inter', value: 'Inter, "Segoe UI", sans-serif' },
-  { id: 'georgia', label: 'Georgia', value: 'Georgia, serif' },
-  { id: 'times', label: 'Times New Roman', value: '"Times New Roman", Times, serif' },
-  { id: 'courier', label: 'Courier New', value: '"Courier New", Courier, monospace' },
-] as const
+export const FONT_GROUPS = [
+  {
+    id: 'classic',
+    label: 'Classic',
+    fonts: [
+      { id: 'playfair', label: 'Playfair Display', value: '"Playfair Display", Georgia, serif' },
+      { id: 'newsreader', label: 'Newsreader', value: '"Newsreader", "Times New Roman", serif' },
+      { id: 'garamond', label: 'EB Garamond', value: '"EB Garamond", Georgia, serif' },
+      { id: 'baskerville', label: 'Libre Baskerville', value: '"Libre Baskerville", Georgia, serif' },
+      { id: 'source-serif', label: 'Source Serif 4', value: '"Source Serif 4", Georgia, serif' },
+      { id: 'source-sans', label: 'Source Sans 3', value: '"Source Sans 3", "Segoe UI", sans-serif' },
+      { id: 'inter', label: 'Inter', value: 'Inter, "Segoe UI", sans-serif' },
+      { id: 'georgia', label: 'Georgia', value: 'Georgia, serif' },
+      { id: 'times', label: 'Times New Roman', value: '"Times New Roman", Times, serif' },
+      { id: 'courier', label: 'Courier New', value: '"Courier New", Courier, monospace' },
+    ],
+  },
+  {
+    id: 'brush',
+    label: 'Brush',
+    fonts: [
+      { id: 'permanent-marker', label: 'Permanent Marker', value: '"Permanent Marker", "Comic Sans MS", cursive' },
+      { id: 'rock-salt', label: 'Rock Salt', value: '"Rock Salt", "Comic Sans MS", cursive' },
+      { id: 'homemade-apple', label: 'Homemade Apple', value: '"Homemade Apple", "Segoe Script", cursive' },
+      { id: 'covered-grace', label: 'Covered By Your Grace', value: '"Covered By Your Grace", "Segoe Script", cursive' },
+      { id: 'sedgwick', label: 'Sedgwick Ave', value: '"Sedgwick Ave", "Comic Sans MS", cursive' },
+      { id: 'caveat', label: 'Caveat', value: 'Caveat, "Segoe Script", cursive' },
+    ],
+  },
+  {
+    id: 'rustic',
+    label: 'Rustic',
+    fonts: [
+      { id: 'special-elite', label: 'Special Elite', value: '"Special Elite", "Courier New", monospace' },
+      { id: 'fredericka', label: 'Fredericka the Great', value: '"Fredericka the Great", Georgia, serif' },
+      { id: 'amatic', label: 'Amatic SC', value: '"Amatic SC", "Comic Sans MS", cursive' },
+      { id: 'kalam', label: 'Kalam', value: 'Kalam, "Comic Sans MS", cursive' },
+      { id: 'architects', label: 'Architects Daughter', value: '"Architects Daughter", "Comic Sans MS", cursive' },
+      { id: 'im-fell', label: 'IM Fell English', value: '"IM Fell English", Georgia, serif' },
+      { id: 'uncial', label: 'Uncial Antiqua', value: '"Uncial Antiqua", Georgia, serif' },
+    ],
+  },
+]
 
 export const TEXTURE_OPTIONS: { id: TextureId; label: string }[] = [
   { id: 'none', label: 'None' },
   { id: 'paper', label: 'Paper grain' },
   { id: 'newsprint', label: 'Newsprint' },
   { id: 'parchment', label: 'Aged yellow paper' },
-  { id: 'fiber', label: 'Fiber' },
+  { id: 'fiber', label: 'Laid fiber' },
+  { id: 'linen', label: 'Linen weave' },
+  { id: 'canvas', label: 'Canvas' },
+  { id: 'kraft', label: 'Kraft cardboard' },
+  { id: 'notebook', label: 'Notebook rules' },
+  { id: 'wood', label: 'Wood grain' },
+  { id: 'cork', label: 'Cork board' },
+  { id: 'chalkboard', label: 'Chalkboard' },
+  { id: 'marble', label: 'Marble' },
+  { id: 'watercolor', label: 'Watercolor wash' },
+  { id: 'concrete', label: 'Concrete' },
+  { id: 'denim', label: 'Denim twill' },
 ]
 
 function luminance(hex: string): number {

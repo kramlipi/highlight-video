@@ -1,6 +1,22 @@
 export type LayoutMode = 'vertical' | 'horizontal'
 export type MotionMode = 'highlight-draw' | 'ken-burns' | 'typewriter' | 'auto-scroll'
-export type TextureId = 'none' | 'paper' | 'newsprint' | 'parchment' | 'fiber'
+export type TextureId =
+  | 'none'
+  | 'paper'
+  | 'newsprint'
+  | 'parchment'
+  | 'fiber'
+  | 'linen'
+  | 'canvas'
+  | 'kraft'
+  | 'notebook'
+  | 'wood'
+  | 'cork'
+  | 'chalkboard'
+  | 'marble'
+  | 'watercolor'
+  | 'concrete'
+  | 'denim'
 
 export type Rect = {
   x: number

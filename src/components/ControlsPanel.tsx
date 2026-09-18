@@ -1,4 +1,4 @@
-import { FONT_OPTIONS, TEXTURE_OPTIONS, THEME_PRESETS } from '../lib/themes'
+import { FONT_GROUPS, TEXTURE_OPTIONS, THEME_PRESETS } from '../lib/themes'
 import type { LayoutMode, MotionMode, TextureId } from '../lib/types'
 
 type ControlsPanelProps = {
@@ -88,20 +88,62 @@ export function ControlsPanel(props: ControlsPanelProps) {
         </select>
       </label>
 
-      <label className="field">
-        <span>Font</span>
-        <select
-          value={props.font}
-          onChange={(event) => props.onFont(event.target.value)}
-        >
-          <option value="">Theme default</option>
-          {FONT_OPTIONS.map((font) => (
-            <option key={font.id} value={font.value}>
-              {font.label}
-            </option>
+      <div className="look-block">
+        <p className="look-kicker">Texture</p>
+        <p className="hint">Grain sits on top of your colors — pick a surface, not a swatch of paint.</p>
+        <div className="texture-grid">
+          <button
+            type="button"
+            className={props.texture === '' ? 'texture-swatch on' : 'texture-swatch'}
+            onClick={() => props.onTexture('')}
+          >
+            <span>Theme</span>
+          </button>
+          {TEXTURE_OPTIONS.map((texture) => (
+            <button
+              key={texture.id}
+              type="button"
+              className={
+                props.texture === texture.id
+                  ? `texture-swatch texture-${texture.id} on`
+                  : `texture-swatch texture-${texture.id}`
+              }
+              onClick={() => props.onTexture(texture.id)}
+            >
+              <span>{texture.label}</span>
+            </button>
           ))}
-        </select>
-      </label>
+        </div>
+      </div>
+
+      <div className="look-block">
+        <p className="look-kicker">Font</p>
+        <button
+          type="button"
+          className={props.font === '' ? 'font-chip on' : 'font-chip'}
+          onClick={() => props.onFont('')}
+        >
+          Theme default
+        </button>
+        {FONT_GROUPS.map((group) => (
+          <div key={group.id} className="font-menu">
+            <p className="look-kicker">{group.label}</p>
+            <div className="font-chips">
+              {group.fonts.map((font) => (
+                <button
+                  key={font.id}
+                  type="button"
+                  className={props.font === font.value ? 'font-chip on' : 'font-chip'}
+                  style={{ fontFamily: font.value }}
+                  onClick={() => props.onFont(font.value)}
+                >
+                  {font.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
 
       <div className="color-row">
         <label className="field">
@@ -131,23 +173,8 @@ export function ControlsPanel(props: ControlsPanelProps) {
           props.onTexture('')
         }}
       >
-        Reset colors & font
+        Reset colors, font & texture
       </button>
-
-      <label className="field">
-        <span>Texture</span>
-        <select
-          value={props.texture}
-          onChange={(event) => props.onTexture(event.target.value as TextureId | '')}
-        >
-          <option value="">Theme default</option>
-          {TEXTURE_OPTIONS.map((texture) => (
-            <option key={texture.id} value={texture.id}>
-              {texture.label}
-            </option>
-          ))}
-        </select>
-      </label>
 
       <fieldset className="motion-set">
         <legend>Motion</legend>

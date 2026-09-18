@@ -126,23 +126,23 @@
   border-radius: 2px;
 }
 
-.texture-newsprint {
-  background-color: var(--article-bg);
+.texture-newsprint::after {
   background-image:
     repeating-linear-gradient(
       0deg,
       transparent,
       transparent 2px,
-      rgba(80, 60, 30, 0.045) 2px,
-      rgba(80, 60, 30, 0.045) 3px
+      rgba(80, 60, 30, 0.1) 2px,
+      rgba(80, 60, 30, 0.1) 3px
     ),
     repeating-linear-gradient(
       90deg,
       transparent,
       transparent 3px,
-      rgba(40, 30, 10, 0.03) 3px,
-      rgba(40, 30, 10, 0.03) 4px
+      rgba(40, 30, 10, 0.07) 3px,
+      rgba(40, 30, 10, 0.07) 4px
     );
+  mix-blend-mode: multiply;
 }
 
 .article-sheet[data-theme='newspaper'] .article-body h1 {
@@ -152,9 +152,9 @@
 
 .texture-parchment::before {
   background:
-    radial-gradient(ellipse at 18% 12%, rgba(120, 70, 20, 0.16), transparent 42%),
-    radial-gradient(ellipse at 88% 78%, rgba(90, 40, 10, 0.18), transparent 46%),
-    radial-gradient(ellipse at 40% 100%, rgba(160, 110, 40, 0.12), transparent 40%);
+    radial-gradient(ellipse at 18% 12%, rgba(120, 70, 20, 0.18), transparent 42%),
+    radial-gradient(ellipse at 88% 78%, rgba(90, 40, 10, 0.2), transparent 46%),
+    radial-gradient(ellipse at 40% 100%, rgba(160, 110, 40, 0.14), transparent 40%);
   mix-blend-mode: multiply;
 }
 
@@ -163,26 +163,162 @@
     -12deg,
     transparent,
     transparent 7px,
-    rgba(90, 50, 10, 0.04) 7px,
-    rgba(90, 50, 10, 0.04) 8px
+    rgba(90, 50, 10, 0.05) 7px,
+    rgba(90, 50, 10, 0.05) 8px
   );
 }
 
 .texture-paper::after {
-  opacity: 0.28;
-  background-image: radial-gradient(rgba(90, 70, 40, 0.18) 0.6px, transparent 0.8px);
-  background-size: 3px 3px;
+  opacity: 0.45;
+  background-image:
+    radial-gradient(rgba(90, 70, 40, 0.28) 0.55px, transparent 0.8px),
+    radial-gradient(rgba(40, 30, 20, 0.12) 0.4px, transparent 0.7px);
+  background-size: 3px 3px, 5px 4px;
+  background-position: 0 0, 1.5px 2px;
 }
 
 .texture-fiber::after {
-  opacity: 0.22;
+  opacity: 0.55;
+  background-image:
+    repeating-linear-gradient(
+      92deg,
+      transparent 0 9px,
+      rgba(90, 70, 40, 0.08) 9px 10px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 13px,
+      rgba(255, 240, 200, 0.12) 13px 14px
+    );
+  mix-blend-mode: multiply;
+}
+
+.texture-linen::after {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(90, 70, 40, 0.1) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(90deg, rgba(90, 70, 40, 0.1) 0 1px, transparent 1px 5px);
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+}
+
+.texture-canvas::after {
+  background-image:
+    repeating-linear-gradient(45deg, rgba(70, 50, 30, 0.1) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(-45deg, rgba(70, 50, 30, 0.08) 0 2px, transparent 2px 6px);
+  mix-blend-mode: multiply;
+}
+
+.texture-kraft::before {
+  background:
+    radial-gradient(circle at 12% 20%, rgba(90, 50, 18, 0.18) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 70% 40%, rgba(60, 30, 10, 0.14) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 40% 80%, rgba(120, 70, 30, 0.12) 0 1.4px, transparent 2.2px);
+  background-size: 18px 18px, 12px 14px, 22px 16px;
+  mix-blend-mode: multiply;
+}
+
+.texture-kraft::after {
   background-image: repeating-linear-gradient(
-    90deg,
-    transparent,
-    transparent 11px,
-    rgba(255, 240, 200, 0.08) 11px,
-    rgba(255, 240, 200, 0.08) 12px
+    8deg,
+    transparent 0 14px,
+    rgba(80, 40, 10, 0.06) 14px 15px
   );
+}
+
+.texture-notebook::after {
+  background-image:
+    linear-gradient(90deg, rgba(180, 40, 40, 0.28) 36px, transparent 37px),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 31px,
+      rgba(70, 110, 180, 0.28) 31px 32px
+    );
+}
+
+.texture-wood::before {
+  background: repeating-linear-gradient(
+    86deg,
+    rgba(92, 48, 16, 0.14) 0px,
+    rgba(168, 108, 48, 0.05) 7px,
+    rgba(70, 36, 12, 0.16) 14px,
+    rgba(190, 130, 60, 0.04) 22px,
+    rgba(92, 48, 16, 0.12) 30px
+  );
+  mix-blend-mode: multiply;
+}
+
+.texture-wood::after {
+  background: repeating-linear-gradient(
+    88deg,
+    transparent 0 48px,
+    rgba(40, 20, 8, 0.08) 48px 50px
+  );
+}
+
+.texture-cork::after {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(120, 80, 40, 0.28) 0 4px, transparent 5px),
+    radial-gradient(circle at 70% 55%, rgba(90, 55, 25, 0.22) 0 6px, transparent 7px),
+    radial-gradient(circle at 45% 80%, rgba(150, 100, 50, 0.2) 0 3px, transparent 4px),
+    radial-gradient(circle at 85% 18%, rgba(70, 40, 18, 0.18) 0 5px, transparent 6px);
+  background-size: 28px 28px, 36px 32px, 22px 24px, 40px 38px;
+  mix-blend-mode: multiply;
+}
+
+.texture-chalkboard::before {
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.06) 0.6px, transparent 0.8px),
+    radial-gradient(rgba(0, 0, 0, 0.25) 0.7px, transparent 1px);
+  background-size: 4px 4px, 7px 6px;
+}
+
+.texture-chalkboard::after {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.05), transparent 40%),
+    radial-gradient(ellipse at 80% 70%, rgba(0, 0, 0, 0.18), transparent 45%);
+}
+
+.texture-marble::before {
+  background:
+    linear-gradient(115deg, transparent 40%, rgba(90, 90, 90, 0.12) 42%, transparent 44%),
+    linear-gradient(28deg, transparent 55%, rgba(120, 120, 130, 0.1) 57%, transparent 60%),
+    linear-gradient(160deg, transparent 20%, rgba(70, 70, 80, 0.08) 22%, transparent 26%);
+  mix-blend-mode: multiply;
+}
+
+.texture-marble::after {
+  background:
+    radial-gradient(ellipse at 70% 30%, rgba(180, 180, 190, 0.12), transparent 36%),
+    radial-gradient(ellipse at 20% 80%, rgba(90, 90, 100, 0.1), transparent 40%);
+}
+
+.texture-watercolor::before {
+  background:
+    radial-gradient(ellipse at 18% 22%, rgba(80, 120, 180, 0.14), transparent 42%),
+    radial-gradient(ellipse at 78% 18%, rgba(180, 70, 90, 0.12), transparent 38%),
+    radial-gradient(ellipse at 60% 78%, rgba(80, 150, 110, 0.12), transparent 44%),
+    radial-gradient(ellipse at 30% 70%, rgba(190, 140, 50, 0.1), transparent 36%);
+  mix-blend-mode: multiply;
+}
+
+.texture-watercolor::after {
+  background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.08), transparent 55%);
+}
+
+.texture-concrete::after {
+  background-image:
+    radial-gradient(rgba(40, 40, 40, 0.16) 0.6px, transparent 0.9px),
+    radial-gradient(rgba(255, 255, 255, 0.08) 0.5px, transparent 0.8px),
+    linear-gradient(130deg, transparent 48%, rgba(0, 0, 0, 0.06) 49%, transparent 51%);
+  background-size: 4px 4px, 6px 5px, auto;
+  mix-blend-mode: multiply;
+}
+
+.texture-denim::after {
+  background-image:
+    repeating-linear-gradient(135deg, rgba(20, 40, 80, 0.1) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 5px);
+  mix-blend-mode: multiply;
 }
 
 .article-sheet.theme-ready {
