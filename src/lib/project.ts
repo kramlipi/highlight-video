@@ -3,6 +3,7 @@ export type ToolId =
   | 'script'
   | 'highlight'
   | 'cartoon'
+  | 'vertical'
   | 'captions'
   | 'titles'
   | 'thumb'
@@ -41,6 +42,7 @@ export const TOOLS: ToolMeta[] = [
   { id: 'script', label: 'Script', blurb: 'Write the episode in Markdown', group: 'Write' },
   { id: 'titles', label: 'Titles', blurb: 'YouTube title formulas', group: 'Write' },
   { id: 'highlight', label: 'Highlight', blurb: 'Article clip with yellow marker', group: 'Picture' },
+  { id: 'vertical', label: 'Shorts', blurb: 'One long video → many 9:16 reels', group: 'Picture' },
   { id: 'cartoon', label: 'Cartoon cut', blurb: 'Silence, stills, talking face, subs', group: 'Picture' },
   { id: 'thumb', label: 'Thumb', blurb: '1280×720 thumbnail card', group: 'Picture' },
   { id: 'captions', label: 'Captions', blurb: 'SRT, karaoke chunks, live speech', group: 'Audio' },

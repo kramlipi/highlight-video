@@ -264,7 +264,20 @@ export function downloadBlob(blob: Blob, filename: string) {
   const link = document.createElement('a')
   link.href = url
   link.download = filename
+  link.rel = 'noopener'
+  document.body.appendChild(link)
   link.click()
-  URL.revokeObjectURL(url)
+  link.remove()
+  const delay = Math.min(120_000, Math.max(8_000, Math.round(blob.size / 40_000)))
+  window.setTimeout(() => URL.revokeObjectURL(url), delay)
+}
+
+export function startDirectDownload(url: string) {
+  const link = document.createElement('a')
+  link.href = url
+  link.rel = 'noopener'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
 }
 

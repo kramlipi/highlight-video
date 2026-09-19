@@ -20,6 +20,7 @@ from silence_trim import run_silence_trim
 from still_trim import run_still_trim, still_trim_available
 from subtitle import add_subtitles
 from tools import find_tool, tool_version
+from vertical import convert_many_shorts, convert_to_vertical, plan_shorts
 
 HOST = "127.0.0.1"
 PORT = 8765
@@ -471,6 +472,7 @@ def health():
             "auto_editor_version": tool_version("auto-editor"),
             "still_trim_available": still_trim_available(),
             "whisper_available": _whisper_available(),
+            "vertical": find_tool("ffmpeg") is not None,
         }
     )
 
@@ -632,6 +634,277 @@ def process():
         return jsonify({"error": f"Upload failed: {exc}"}), 500
 
 
+def _resolve_job_input(payload: dict) -> tuple[Path, str, Path, bool]:
+    local_path_raw = (
+        request.form.get("local_path") or payload.get("local_path") or ""
+    ).strip()
+    job_id = uuid.uuid4().hex
+    job_dir = WORK_DIR / job_id
+    job_dir.mkdir(parents=True)
+
+    if local_path_raw:
+        source = resolve_path(local_path_raw)
+        if not source.is_file():
+            raise ValueError(f"Local file not found: {display_path(source)}")
+        if source.suffix.lower() not in VIDEO_SUFFIXES:
+            raise ValueError(f"Unsupported file type '{source.suffix}'")
+        return source.resolve(), source.name, job_dir, True
+
+    if "video" not in request.files:
+        raise ValueError("Missing video. For large files, paste the full local path.")
+    upload = request.files["video"]
+    if not upload or not upload.filename:
+        raise ValueError("No file uploaded")
+    original_name = upload.filename
+    safe_stem = secure_filename(Path(original_name).stem) or "video"
+    suffix = Path(original_name).suffix or ".mp4"
+    input_path = job_dir / f"{safe_stem}{suffix}"
+    upload.save(input_path)
+    return input_path, original_name, job_dir, False
+
+
+def run_vertical_job(
+    job_id: str,
+    input_path: Path,
+    original_name: str,
+    *,
+    work_dir: Path,
+    mode: str,
+    focus: float,
+    start: float,
+    duration: float | None,
+    split: bool = False,
+    clip: float = 30,
+    max_shorts: int | None = None,
+) -> None:
+    options = {
+        "mode": mode,
+        "focus": focus,
+        "start": start,
+        "duration": duration,
+        "split": split,
+        "clip": clip,
+        "max_shorts": max_shorts,
+    }
+    try:
+        set_job(
+            job_id,
+            status="running",
+            step=1,
+            step_total=1,
+            step_label="9:16 convert",
+            progress=2,
+            message="Reframing to 1080×1920…",
+            options=options,
+        )
+        stem = Path(original_name).stem or "video"
+
+        if split:
+            def batch_tick(value: float, index: int, count: int, label: str) -> None:
+                set_job(
+                    job_id,
+                    step=index,
+                    step_total=count,
+                    step_label=label,
+                    progress=max(2, int(value * 100)),
+                    message=f"{label} — {int(value * 100)}%",
+                )
+
+            clips, zip_path = convert_many_shorts(
+                input_path,
+                work_dir,
+                mode=mode,
+                focus=focus,
+                start=start,
+                clip=clip,
+                max_shorts=max_shorts,
+                on_progress=batch_tick,
+            )
+            set_job(
+                job_id,
+                status="done",
+                progress=100,
+                step=len(clips),
+                step_total=len(clips),
+                step_label="Done",
+                message=f"{len(clips)} shorts ready",
+                final_path=str(zip_path),
+                final_path_display=display_path(zip_path),
+                output_name=zip_path.name,
+                clips=clips,
+                options=options,
+            )
+            return
+
+        output_path = work_dir / f"{stem}_9x16.mp4"
+
+        def tick(value: float) -> None:
+            set_job(
+                job_id,
+                progress=max(2, int(value * 100)),
+                message=f"Encoding 9:16 — {int(value * 100)}%",
+            )
+
+        convert_to_vertical(
+            input_path,
+            output_path,
+            mode=mode,
+            focus=focus,
+            start=start,
+            duration=duration,
+            on_progress=tick,
+        )
+        set_job(
+            job_id,
+            status="done",
+            progress=100,
+            step_label="Done",
+            message="9:16 video ready",
+            final_path=str(output_path),
+            options=options,
+        )
+    except Exception as exc:
+        set_job(
+            job_id,
+            status="error",
+            progress=0,
+            message=str(exc),
+            options=options,
+        )
+
+
+@app.route("/api/vertical", methods=["POST", "OPTIONS"])
+def vertical():
+    if request.method == "OPTIONS":
+        return ("", 204)
+    try:
+        payload = request.get_json(silent=True) or {}
+        mode = str(request.form.get("mode", payload.get("mode") or "blur")).strip().lower()
+        if mode not in {"blur", "crop"}:
+            return jsonify({"error": "mode must be blur or crop"}), 400
+        try:
+            focus = float(request.form.get("focus", payload.get("focus", 0.5)))
+        except (TypeError, ValueError):
+            focus = 0.5
+        try:
+            start = float(request.form.get("start", payload.get("start", 0)) or 0)
+        except (TypeError, ValueError):
+            start = 0
+        duration_raw = request.form.get("duration", payload.get("duration"))
+        try:
+            duration = float(duration_raw) if duration_raw not in (None, "") else None
+        except (TypeError, ValueError):
+            duration = None
+        split = _parse_bool(request.form.get("split", payload.get("split")), False)
+        try:
+            clip = float(request.form.get("clip", payload.get("clip", 30)) or 30)
+        except (TypeError, ValueError):
+            clip = 30
+        max_raw = request.form.get("max_shorts", payload.get("max_shorts"))
+        try:
+            max_shorts = int(max_raw) if max_raw not in (None, "", "0") else None
+        except (TypeError, ValueError):
+            max_shorts = None
+
+        input_path, original_name, job_dir, from_disk = _resolve_job_input(payload)
+        job_id = job_dir.name
+        set_job(
+            job_id,
+            status="queued",
+            step=0,
+            step_total=1,
+            step_label="Queued",
+            progress=0,
+            message="Queued shorts factory" if split else "Queued 9:16 convert",
+            input_name=original_name,
+            original_path=str(input_path),
+            options={
+                "mode": mode,
+                "focus": focus,
+                "start": start,
+                "duration": duration,
+                "split": split,
+                "clip": clip,
+                "max_shorts": max_shorts,
+            },
+            source_mode="local_path" if from_disk else "upload",
+        )
+        thread = threading.Thread(
+            target=run_vertical_job,
+            args=(job_id, input_path, original_name),
+            kwargs={
+                "work_dir": job_dir,
+                "mode": mode,
+                "focus": focus,
+                "start": start,
+                "duration": duration,
+                "split": split,
+                "clip": clip,
+                "max_shorts": max_shorts,
+            },
+            daemon=True,
+        )
+        thread.start()
+        return jsonify({"job_id": job_id, "input_name": original_name})
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Vertical convert failed: {exc}"}), 500
+
+
+@app.route("/api/probe", methods=["POST", "OPTIONS"])
+def probe():
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True) or {}
+    local_path_raw = (request.form.get("local_path") or payload.get("local_path") or "").strip()
+    if not local_path_raw:
+        return jsonify({"error": "Paste a local file path to probe."}), 400
+    source = resolve_path(local_path_raw)
+    if not source.is_file():
+        return jsonify({"error": f"Local file not found: {display_path(source)}"}), 400
+    total = probe_duration(source)
+    try:
+        clip = float(request.form.get("clip", payload.get("clip", 30)) or 30)
+    except (TypeError, ValueError):
+        clip = 30
+    try:
+        start = float(request.form.get("start", payload.get("start", 0)) or 0)
+    except (TypeError, ValueError):
+        start = 0
+    max_raw = request.form.get("max_shorts", payload.get("max_shorts"))
+    try:
+        max_shorts = int(max_raw) if max_raw not in (None, "", "0") else None
+    except (TypeError, ValueError):
+        max_shorts = None
+    planned = plan_shorts(total or 0, start=start, clip=clip, max_shorts=max_shorts) if total else []
+    return jsonify(
+        {
+            "ok": True,
+            "path": display_path(source),
+            "name": source.name,
+            "duration": total,
+            "clip": clip,
+            "short_count": len(planned),
+        }
+    )
+
+
+@app.route("/api/clip/<job_id>/<int:index>")
+def download_clip(job_id: str, index: int):
+    job = get_job(job_id)
+    if not job or job.get("status") != "done":
+        return jsonify({"error": "Output not ready"}), 400
+    clips = job.get("clips") or []
+    match = next((item for item in clips if int(item.get("index", 0)) == index), None)
+    if not match:
+        return jsonify({"error": "Short not found"}), 404
+    clip_path = Path(match["path"])
+    if not clip_path.is_file():
+        return jsonify({"error": "Short file missing"}), 404
+    return send_file(clip_path, as_attachment=True, download_name=clip_path.name)
+
+
 @app.route("/api/status/<job_id>")
 def status(job_id: str):
     job = get_job(job_id)
@@ -650,7 +923,14 @@ def download(job_id: str):
     if not out.is_file():
         return jsonify({"error": "Output file missing"}), 404
 
-    return send_file(out, as_attachment=True, download_name=out.name)
+    mime = "application/zip" if out.suffix.lower() == ".zip" else "video/mp4"
+    return send_file(
+        out,
+        mimetype=mime,
+        as_attachment=True,
+        download_name=out.name,
+        conditional=False,
+    )
 
 
 @app.route("/api/play/<job_id>/<kind>")

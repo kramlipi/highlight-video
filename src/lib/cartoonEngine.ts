@@ -12,6 +12,14 @@ export type EngineHealth = {
   output_dir?: string
 }
 
+export type ShortClip = {
+  index: number
+  name: string
+  path?: string
+  start: number
+  duration: number
+}
+
 export type EngineJob = {
   status: string
   step?: number
@@ -21,19 +29,26 @@ export type EngineJob = {
   message?: string
   error?: string
   input_name?: string
-  options?: CutOptions
+  output_name?: string
+  final_path?: string
+  final_path_display?: string
+  options?: CutOptions | Record<string, unknown>
+  clips?: ShortClip[]
 }
 
 export async function pingEngine(): Promise<EngineHealth | null> {
-  try {
-    const res = await fetch(`${ENGINE_URL}/api/health`, {
-      signal: AbortSignal.timeout(1800),
-    })
-    if (!res.ok) return null
-    return (await res.json()) as EngineHealth
-  } catch {
-    return null
+  for (const base of [ENGINE_URL, 'http://localhost:8765']) {
+    try {
+      const res = await fetch(`${base}/api/health`, {
+        signal: AbortSignal.timeout(2500),
+      })
+      if (!res.ok) continue
+      return (await res.json()) as EngineHealth
+    } catch {
+      /* try the next local URL */
+    }
   }
+  return null
 }
 
 export async function startEngineJob(opts: {
@@ -71,8 +86,86 @@ export async function pollEngineJob(
   }
 }
 
+export async function startVerticalJob(opts: {
+  file?: File | null
+  localPath?: string
+  mode: 'blur' | 'crop'
+  focus: number
+  start: number
+  duration?: number | null
+  split?: boolean
+  clip?: number
+  maxShorts?: number | null
+}): Promise<{ job_id: string }> {
+  const form = new FormData()
+  form.set('mode', opts.mode)
+  form.set('focus', String(opts.focus))
+  form.set('start', String(opts.start || 0))
+  form.set('split', String(Boolean(opts.split)))
+  if (opts.duration && opts.duration > 0) form.set('duration', String(opts.duration))
+  if (opts.clip && opts.clip > 0) form.set('clip', String(opts.clip))
+  if (opts.maxShorts && opts.maxShorts > 0) form.set('max_shorts', String(opts.maxShorts))
+  const localPath = opts.localPath?.trim()
+  if (localPath) form.set('local_path', localPath)
+  else if (opts.file) form.set('video', opts.file)
+  else throw new Error('Drop a video or paste a local file path.')
+
+  const res = await fetch(`${ENGINE_URL}/api/vertical`, { method: 'POST', body: form })
+  const data = (await res.json()) as { job_id?: string; error?: string }
+  if (!res.ok || !data.job_id) throw new Error(data.error || 'Could not start the 9:16 convert.')
+  return { job_id: data.job_id }
+}
+
+export async function probeLocalVideo(opts: {
+  localPath: string
+  clip: number
+  start?: number
+  maxShorts?: number | null
+}): Promise<{ duration: number | null; short_count: number; name: string }> {
+  const form = new FormData()
+  form.set('local_path', opts.localPath)
+  form.set('clip', String(opts.clip))
+  form.set('start', String(opts.start || 0))
+  if (opts.maxShorts && opts.maxShorts > 0) form.set('max_shorts', String(opts.maxShorts))
+  const res = await fetch(`${ENGINE_URL}/api/probe`, { method: 'POST', body: form })
+  const data = (await res.json()) as {
+    duration?: number
+    short_count?: number
+    name?: string
+    error?: string
+  }
+  if (!res.ok) throw new Error(data.error || 'Could not read that video.')
+  return {
+    duration: data.duration ?? null,
+    short_count: data.short_count ?? 0,
+    name: data.name || 'video',
+  }
+}
+
+export function engineJobUrl(jobId: string) {
+  return `${ENGINE_URL}/api/download/${jobId}`
+}
+
+export function engineClipUrl(jobId: string, index: number) {
+  return `${ENGINE_URL}/api/clip/${jobId}/${index}`
+}
+
 export async function downloadEngineJob(jobId: string): Promise<Blob> {
-  const res = await fetch(`${ENGINE_URL}/api/download/${jobId}`)
+  const res = await fetch(engineJobUrl(jobId))
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string }
+    throw new Error(data.error || 'Download failed')
+  }
+  const blob = await res.blob()
+  const head = new Uint8Array(await blob.slice(0, 2).arrayBuffer())
+  if (head[0] !== 0x50 || head[1] !== 0x4b) {
+    throw new Error('The zip coming from the local engine was not a zip. Try Download zip again.')
+  }
+  return blob
+}
+
+export async function downloadEngineClip(jobId: string, index: number): Promise<Blob> {
+  const res = await fetch(engineClipUrl(jobId, index))
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string }
     throw new Error(data.error || 'Download failed')

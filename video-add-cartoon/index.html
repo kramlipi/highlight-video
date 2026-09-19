@@ -66,7 +66,7 @@
     }
 
     @media (min-width: 900px) {
-      .options { grid-template-columns: repeat(4, 1fr); }
+      .options { grid-template-columns: repeat(5, 1fr); }
     }
 
     @media (max-width: 720px) {
@@ -152,6 +152,33 @@
       margin: -10px 0 20px;
       font-size: 0.82rem;
       color: var(--muted);
+    }
+
+    .shorts-settings {
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: -6px 0 18px;
+    }
+
+    .shorts-settings.visible {
+      display: grid;
+    }
+
+    .shorts-settings label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .shorts-settings select {
+      background: var(--surface2);
+      color: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
     }
 
     .dropzone {
@@ -532,7 +559,7 @@
     <h1>Video Processing Pipeline</h1>
     <p class="subtitle">
       Toggle each step separately: remove silence, remove still frames,
-      add a talking cartoon, and/or burn in subtitles.
+      add a talking cartoon, burn in subtitles, and/or cut many 9:16 shorts.
     </p>
 
     <div class="options" id="options">
@@ -568,6 +595,38 @@
           <span class="option-desc">Whisper transcription burned into the video</span>
         </span>
       </label>
+      <label class="option on" id="optShorts">
+        <input type="checkbox" id="shortsToggle" checked />
+        <span class="toggle" aria-hidden="true"></span>
+        <span class="option-text">
+          <span class="option-title">9:16 shorts</span>
+          <span class="option-desc">Split the long video into many vertical reels</span>
+        </span>
+      </label>
+    </div>
+    <div class="shorts-settings" id="shortsSettings">
+      <label>Each short
+        <select id="shortsClip">
+          <option value="15">15 seconds</option>
+          <option value="30" selected>30 seconds</option>
+          <option value="45">45 seconds</option>
+          <option value="60">60 seconds</option>
+        </select>
+      </label>
+      <label>How many
+        <select id="shortsMax">
+          <option value="6">6 shorts</option>
+          <option value="12" selected>12 shorts</option>
+          <option value="24">24 shorts</option>
+          <option value="0">All</option>
+        </select>
+      </label>
+      <label>Look
+        <select id="shortsMode">
+          <option value="blur" selected>Blur fill</option>
+          <option value="crop">Tight crop</option>
+        </select>
+      </label>
     </div>
     <p class="options-hint" id="optionsHint">All steps enabled — use a local path for large videos.</p>
 
@@ -579,7 +638,7 @@
         <code>D:\Videos\my-recording.mp4</code>
       </p>
       <div class="local-row">
-        <input type="text" id="localPathInput" placeholder="D:\path\to\video.mp4" spellcheck="false" />
+        <input type="text" id="localPathInput" placeholder="D:\path\to\video.mp4" spellcheck="false" value="D:\karm\video_tutorial\CALL-OF-DUTY-MODERN-WARFARE-THE-EMBASSY-CCTV-ESCAPE.mp4" />
         <button type="button" id="localPathBtn">Process local file</button>
       </div>
     </div>
@@ -624,6 +683,13 @@
         <div class="step-body">
           <div class="step-title">Subtitles</div>
           <div class="step-detail" id="stepSubtitlesDetail">Waiting…</div>
+        </div>
+      </div>
+      <div class="step" id="stepShorts" data-step="shorts">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">9:16 shorts</div>
+          <div class="step-detail" id="stepShortsDetail">Waiting…</div>
         </div>
       </div>
     </div>
@@ -714,10 +780,18 @@
     const stillToggle = document.getElementById("stillToggle");
     const cartoonToggle = document.getElementById("cartoonToggle");
     const subtitlesToggle = document.getElementById("subtitlesToggle");
+    const shortsToggle = document.getElementById("shortsToggle");
+    const shortsSettings = document.getElementById("shortsSettings");
+    const shortsClip = document.getElementById("shortsClip");
+    const shortsMax = document.getElementById("shortsMax");
+    const shortsMode = document.getElementById("shortsMode");
     const optSilence = document.getElementById("optSilence");
     const optStill = document.getElementById("optStill");
     const optCartoon = document.getElementById("optCartoon");
     const optSubtitles = document.getElementById("optSubtitles");
+    const optShorts = document.getElementById("optShorts");
+    const stepShorts = document.getElementById("stepShorts");
+    const stepShortsDetail = document.getElementById("stepShortsDetail");
 
     const localPathInput = document.getElementById("localPathInput");
     const localPathBtn = document.getElementById("localPathBtn");
@@ -725,7 +799,7 @@
     let pollTimer = null;
     let activeJobId = null;
     let healthInfo = null;
-    let selectedOptions = { silence: true, still: false, cartoon: true, subtitles: true };
+    let selectedOptions = { silence: true, still: false, cartoon: true, subtitles: true, shorts: true };
 
     async function readJson(res) {
       const text = await res.text();
@@ -756,6 +830,10 @@
         still: stillToggle.checked,
         cartoon: cartoonToggle.checked,
         subtitles: subtitlesToggle.checked,
+        shorts: shortsToggle.checked,
+        clip: Number(shortsClip.value) || 30,
+        max_shorts: Number(shortsMax.value) || 0,
+        mode: shortsMode.value === "crop" ? "crop" : "blur",
       };
     }
 
@@ -765,19 +843,19 @@
       optStill.classList.toggle("on", opts.still);
       optCartoon.classList.toggle("on", opts.cartoon);
       optSubtitles.classList.toggle("on", opts.subtitles);
+      optShorts.classList.toggle("on", opts.shorts);
+      shortsSettings.classList.toggle("visible", opts.shorts);
 
       const labels = [];
       if (opts.silence) labels.push("silence");
       if (opts.still) labels.push("still frames");
       if (opts.cartoon) labels.push("cartoon");
       if (opts.subtitles) labels.push("subtitles");
+      if (opts.shorts) labels.push("9:16 shorts");
 
       if (!labels.length) {
         optionsHint.textContent = "Select at least one option before starting.";
         optionsHint.style.color = "var(--error)";
-      } else if (labels.length === 4) {
-        optionsHint.textContent = "All steps enabled — use a local path for large videos.";
-        optionsHint.style.color = "";
       } else {
         optionsHint.textContent = `Will run: ${labels.join(" → ")}.`;
         optionsHint.style.color = "";
@@ -785,7 +863,7 @@
       updateHealthWarnings();
     }
 
-    [silenceToggle, stillToggle, cartoonToggle, subtitlesToggle].forEach((el) => {
+    [silenceToggle, stillToggle, cartoonToggle, subtitlesToggle, shortsToggle].forEach((el) => {
       el.addEventListener("change", syncOptionCards);
     });
 
@@ -824,6 +902,7 @@
         [stepStill, stepStillDetail, opts.still],
         [stepCartoon, stepCartoonDetail, opts.cartoon],
         [stepSubtitles, stepSubtitlesDetail, opts.subtitles],
+        [stepShorts, stepShortsDetail, opts.shorts],
       ];
       map.forEach(([el, detail, enabled], i) => {
         el.className = "step" + (enabled ? "" : " skipped");
@@ -868,6 +947,13 @@
           key: "subtitles",
           doneMsg: "Subtitles burned in",
           activeMsg: "Generating subtitles…",
+        },
+        {
+          el: stepShorts,
+          detail: stepShortsDetail,
+          key: "shorts",
+          doneMsg: "Shorts cut",
+          activeMsg: "Cutting 9:16 shorts…",
         },
       ];
 
@@ -958,14 +1044,19 @@
       resetStepUi(selectedOptions);
     }
 
+    function anyStepOn(opts) {
+      return opts.silence || opts.still || opts.cartoon || opts.subtitles || opts.shorts;
+    }
+
     async function startJob(formOrPayload, label, isJson = false) {
       selectedOptions = getOptions();
       beginUi(label);
       setStatus(isJson ? "Starting from local path…" : "Uploading…");
 
       try {
+        const endpoint = selectedOptions.shorts ? "/api/vertical" : "/api/process";
         const res = await fetch(
-          apiUrl("/api/process"),
+          apiUrl(endpoint),
           isJson
             ? {
                 method: "POST",
@@ -988,7 +1079,7 @@
 
     async function handleFile(file) {
       const opts = getOptions();
-      if (!opts.silence && !opts.still && !opts.cartoon && !opts.subtitles) {
+      if (!anyStepOn(opts)) {
         statusEl.classList.add("visible");
         setStatus("Select at least one option first.", "error");
         return;
@@ -1012,12 +1103,16 @@
       form.append("still", opts.still ? "true" : "false");
       form.append("cartoon", opts.cartoon ? "true" : "false");
       form.append("subtitles", opts.subtitles ? "true" : "false");
+      form.append("split", opts.shorts ? "true" : "false");
+      form.append("clip", String(opts.clip));
+      form.append("max_shorts", String(opts.max_shorts));
+      form.append("mode", opts.mode);
       await startJob(form, file.name, false);
     }
 
     async function handleLocalPath() {
       const opts = getOptions();
-      if (!opts.silence && !opts.still && !opts.cartoon && !opts.subtitles) {
+      if (!anyStepOn(opts)) {
         statusEl.classList.add("visible");
         setStatus("Select at least one option first.", "error");
         return;
@@ -1036,6 +1131,10 @@
           still: opts.still,
           cartoon: opts.cartoon,
           subtitles: opts.subtitles,
+          split: opts.shorts,
+          clip: opts.clip,
+          max_shorts: opts.max_shorts,
+          mode: opts.mode,
         },
         path,
         true
@@ -1075,8 +1174,12 @@
           const link = document.createElement("a");
           link.className = "download";
           link.href = apiUrl(`/api/download/${jobId}`);
-          link.download = job.output_name || "output.mp4";
-          link.textContent = "Download final video";
+          link.download = (job.clips && job.clips.length)
+            ? (job.output_name || "shotflow-shorts.zip")
+            : (job.output_name || "output.mp4");
+          link.textContent = (job.clips && job.clips.length)
+            ? `Download ${job.clips.length} shorts zip`
+            : "Download final video";
           actionsEl.appendChild(link);
         }
 

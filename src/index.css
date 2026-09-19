@@ -1,11 +1,11 @@
 :root {
-  --studio-bg: #101218;
-  --studio-panel: #171a22;
-  --studio-border: #2a3040;
-  --studio-text: #e8eaef;
+  --studio-bg: #07080c;
+  --studio-panel: #101218;
+  --studio-border: #232833;
+  --studio-text: #f4f5f7;
   --studio-muted: #9aa3b5;
-  --studio-accent: #e8c547;
-  --studio-input: #10141c;
+  --studio-accent: #d8ff3e;
+  --studio-input: #0b0d12;
   font-family: Inter, "Segoe UI", sans-serif;
   color: var(--studio-text);
   background: var(--studio-bg);

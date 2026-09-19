@@ -1,11 +1,11 @@
 {
   "name": "Shotflow",
   "short_name": "Shotflow",
-  "description": "YouTube creation suite: pick highlighter videos, cartoon cuts, karaoke captions, titles, thumbnails, and a publish pack.",
+  "description": "Turn one long video into many 9:16 shorts, plus captions, titles, thumbs, and a YouTube publish pack.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#101218",
-  "theme_color": "#101218",
+  "background_color": "#07080c",
+  "theme_color": "#07080c",
   "lang": "en",
   "icons": [
     {
