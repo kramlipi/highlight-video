@@ -173,9 +173,9 @@ export function VerticalDesk() {
     const made = await exportBrowserShorts({
       canvas,
       video,
-      clip,
+      clip: clip || 30,
       start,
-      maxShorts: maxShorts || 8,
+      maxShorts: maxShorts || 12,
       onProgress: (value, label) => {
         setProgress(value)
         setMessage(label)
@@ -195,7 +195,7 @@ export function VerticalDesk() {
     downloadBlob(zip, 'shotflow-shorts.zip')
     setClipBlobs(nextBlobs)
     setClips(nextClips)
-    setMessage(`${made.length} shorts packed in a zip. Use Download under a reel if you want one file.`)
+    setMessage(`${made.length} × ${clip || 30}s shorts packed in a zip. Use Download under a reel if you want one file.`)
   }
 
   const runConvert = async () => {
@@ -212,10 +212,8 @@ export function VerticalDesk() {
     setProgress(0)
     setMessage('Cutting the long video into 9:16 reels…')
     try {
-      if (health?.ok && (localPath.trim() || file)) {
-        if (health.shorts !== true) {
-          throw new Error('Restart video-add-cartoon/RUN.bat. This engine still exports one tall video instead of 30s shorts.')
-        }
+      const engineCutsShorts = Boolean(health?.ok && health.shorts)
+      if (engineCutsShorts && (localPath.trim() || file)) {
         const started = await startVerticalJob({
           file,
           localPath,
@@ -298,14 +296,12 @@ export function VerticalDesk() {
 
       <div className={`engine-chip ${engineOn ? 'on' : engineChecked ? 'off' : ''}`}>
         <span className="engine-dot" />
-        {engineOn
-          ? health?.shorts
-            ? 'Local FFmpeg ready — long files stay on this PC, cut into 30s shorts'
-            : 'Local engine is old. Restart video-add-cartoon/RUN.bat or it will export one tall video.'
+        {engineOn && health?.shorts
+          ? 'Local FFmpeg ready — long files stay on this PC, cut into 30s shorts'
           : engineChecked
             ? onThisPc()
-              ? 'No local engine. Drop a video to cut shorts here, or run video-add-cartoon/RUN.bat for 1 GB+ paths.'
-              : 'Cloud site: drop a video to make shorts in this browser. For the 2 GB Embassy file, open http://127.0.0.1:8765/ after RUN.bat.'
+              ? 'Drop a video to cut 30s shorts here, or restart video-add-cartoon/RUN.bat for 1 GB+ paths.'
+              : 'Cloud site: drop a video to cut 30s shorts in this browser. Huge local files need http://127.0.0.1:8765/ after RUN.bat.'
             : 'Checking local engine…'}
       </div>
 
