@@ -99,10 +99,11 @@ async function recordClip(
     recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }))
   })
   recorder.start(200)
-  const began = video.currentTime
+  const beganMedia = video.currentTime
+  const beganWall = performance.now()
   await new Promise<void>((resolve) => {
     const tick = () => {
-      const elapsed = video.currentTime - began
+      const elapsed = Math.max(video.currentTime - beganMedia, (performance.now() - beganWall) / 1000)
       onProgress?.(Math.min(0.99, elapsed / seconds))
       if (video.ended || elapsed >= seconds - 0.05) {
         resolve()

@@ -213,6 +213,9 @@ export function VerticalDesk() {
     setMessage('Cutting the long video into 9:16 reels…')
     try {
       if (health?.ok && (localPath.trim() || file)) {
+        if (health.shorts !== true) {
+          throw new Error('Restart video-add-cartoon/RUN.bat. This engine still exports one tall video instead of 30s shorts.')
+        }
         const started = await startVerticalJob({
           file,
           localPath,
@@ -220,7 +223,7 @@ export function VerticalDesk() {
           focus,
           start,
           split: true,
-          clip,
+          clip: clip || 30,
           maxShorts: maxShorts || null,
         })
         setJobId(started.job_id)
@@ -231,13 +234,17 @@ export function VerticalDesk() {
           if (next.clips?.length) setClips(next.clips)
         })
         setJob(done)
-        setClips(done.clips ?? [])
+        const made = done.clips ?? []
+        setClips(made)
+        if (!made.length) {
+          throw new Error('Engine returned one full video and no 30s clips. Restart RUN.bat, then make shorts again.')
+        }
         startDirectDownload(engineJobUrl(started.job_id))
         const saved = done.final_path_display || done.final_path
         setMessage(
           saved
-            ? `${done.clips?.length || 0} shorts zipped. Also on this PC: ${saved}`
-            : `${done.clips?.length || 0} shorts packaged in a zip.`,
+            ? `${made.length} × ${clip || 30}s shorts zipped. Also on this PC: ${saved}`
+            : `${made.length} × ${clip || 30}s shorts packaged in a zip.`,
         )
         setProgress(1)
         return
@@ -292,7 +299,9 @@ export function VerticalDesk() {
       <div className={`engine-chip ${engineOn ? 'on' : engineChecked ? 'off' : ''}`}>
         <span className="engine-dot" />
         {engineOn
-          ? 'Local FFmpeg ready — long files stay on this PC'
+          ? health?.shorts
+            ? 'Local FFmpeg ready — long files stay on this PC, cut into 30s shorts'
+            : 'Local engine is old. Restart video-add-cartoon/RUN.bat or it will export one tall video.'
           : engineChecked
             ? onThisPc()
               ? 'No local engine. Drop a video to cut shorts here, or run video-add-cartoon/RUN.bat for 1 GB+ paths.'

@@ -10,6 +10,7 @@ export type EngineHealth = {
   cartoon_exists: boolean
   cartoon_path?: string
   output_dir?: string
+  shorts?: boolean
 }
 
 export type ShortClip = {
@@ -98,12 +99,14 @@ export async function startVerticalJob(opts: {
   maxShorts?: number | null
 }): Promise<{ job_id: string }> {
   const form = new FormData()
+  const clip = opts.clip && opts.clip > 0 ? opts.clip : 30
   form.set('mode', opts.mode)
   form.set('focus', String(opts.focus))
   form.set('start', String(opts.start || 0))
-  form.set('split', String(Boolean(opts.split)))
+  form.set('split', 'true')
+  form.set('shorts', 'true')
+  form.set('clip', String(clip))
   if (opts.duration && opts.duration > 0) form.set('duration', String(opts.duration))
-  if (opts.clip && opts.clip > 0) form.set('clip', String(opts.clip))
   if (opts.maxShorts && opts.maxShorts > 0) form.set('max_shorts', String(opts.maxShorts))
   const localPath = opts.localPath?.trim()
   if (localPath) form.set('local_path', localPath)

@@ -473,6 +473,7 @@ def health():
             "still_trim_available": still_trim_available(),
             "whisper_available": _whisper_available(),
             "vertical": find_tool("ffmpeg") is not None,
+            "shorts": True,
         }
     )
 
@@ -673,10 +674,13 @@ def run_vertical_job(
     focus: float,
     start: float,
     duration: float | None,
-    split: bool = False,
+    split: bool = True,
     clip: float = 30,
     max_shorts: int | None = None,
+    full: bool = False,
 ) -> None:
+    split = bool(split) and not full
+    clip = max(3.0, clip or 30)
     options = {
         "mode": mode,
         "focus": focus,
@@ -692,9 +696,9 @@ def run_vertical_job(
             status="running",
             step=1,
             step_total=1,
-            step_label="9:16 convert",
+            step_label="9:16 shorts" if split else "9:16 convert",
             progress=2,
-            message="Reframing to 1080×1920…",
+            message=f"Cutting {clip:.0f}s 9:16 shorts…" if split else "Reframing to 1080×1920…",
             options=options,
         )
         stem = Path(original_name).stem or "video"
@@ -795,12 +799,22 @@ def vertical():
             duration = float(duration_raw) if duration_raw not in (None, "") else None
         except (TypeError, ValueError):
             duration = None
-        split = _parse_bool(request.form.get("split", payload.get("split")), False)
+        def form_or_json(*keys: str):
+            for key in keys:
+                if key in request.form:
+                    return request.form.get(key)
+                if key in payload and payload.get(key) is not None:
+                    return payload.get(key)
+            return None
+
+        full = _parse_bool(form_or_json("full"), False)
+        split = (not full) and _parse_bool(form_or_json("split", "shorts"), True)
         try:
-            clip = float(request.form.get("clip", payload.get("clip", 30)) or 30)
+            clip = float(form_or_json("clip") or 30)
         except (TypeError, ValueError):
             clip = 30
-        max_raw = request.form.get("max_shorts", payload.get("max_shorts"))
+        clip = max(3.0, clip)
+        max_raw = form_or_json("max_shorts")
         try:
             max_shorts = int(max_raw) if max_raw not in (None, "", "0") else None
         except (TypeError, ValueError):
@@ -826,6 +840,7 @@ def vertical():
                 "split": split,
                 "clip": clip,
                 "max_shorts": max_shorts,
+                "full": full,
             },
             source_mode="local_path" if from_disk else "upload",
         )
@@ -841,6 +856,7 @@ def vertical():
                 "split": split,
                 "clip": clip,
                 "max_shorts": max_shorts,
+                "full": full,
             },
             daemon=True,
         )

@@ -134,6 +134,8 @@ def convert_to_vertical(
     cmd: list[str] = [ffmpeg, "-y", "-hide_banner"]
     if start > 0:
         cmd.extend(["-ss", f"{start:.3f}"])
+    if duration is not None and duration > 0:
+        cmd.extend(["-t", f"{duration:.3f}"])
     cmd.extend(["-i", str(input_path)])
     if duration is not None and duration > 0:
         cmd.extend(["-t", f"{duration:.3f}"])

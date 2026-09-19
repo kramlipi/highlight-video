@@ -1104,6 +1104,7 @@
       form.append("cartoon", opts.cartoon ? "true" : "false");
       form.append("subtitles", opts.subtitles ? "true" : "false");
       form.append("split", opts.shorts ? "true" : "false");
+      form.append("shorts", opts.shorts ? "true" : "false");
       form.append("clip", String(opts.clip));
       form.append("max_shorts", String(opts.max_shorts));
       form.append("mode", opts.mode);
@@ -1132,6 +1133,7 @@
           cartoon: opts.cartoon,
           subtitles: opts.subtitles,
           split: opts.shorts,
+          shorts: opts.shorts,
           clip: opts.clip,
           max_shorts: opts.max_shorts,
           mode: opts.mode,
