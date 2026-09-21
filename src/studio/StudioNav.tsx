@@ -26,7 +26,7 @@ export function StudioNav() {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Shorts, highlight, cartoon…"
+          placeholder="Shorts, readme, mermaid…"
           aria-label="Filter tools"
         />
       </label>

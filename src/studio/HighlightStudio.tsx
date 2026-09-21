@@ -5,7 +5,7 @@ import { EditorPanel } from '../components/EditorPanel'
 import { PreviewStage } from '../components/PreviewStage'
 import { useProject } from '../context/ProjectContext'
 import { downloadBlob, exportArticleVideo } from '../lib/exportVideo'
-import { renderMarkdown } from '../lib/markdown'
+import { hydrateMermaid, renderMarkdown } from '../lib/markdown'
 import { measureArticle } from '../lib/metrics'
 import { emptyMetrics, getFrameState, sequentialHighlightProgress } from '../lib/motion'
 import { SAMPLE_MARKDOWN } from '../lib/sample'
@@ -48,6 +48,8 @@ export function HighlightStudio() {
     let cancelled = false
     const run = async () => {
       await document.fonts.ready
+      await hydrateMermaid(previewSheetRef.current)
+      await hydrateMermaid(measureRef.current)
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
       if (cancelled || !previewSheetRef.current) return
       setMetrics(measureArticle(previewSheetRef.current, stage.width, stage.height))
@@ -120,6 +122,7 @@ export function HighlightStudio() {
     setExportProgress(0)
     setPlaying(false)
     try {
+      await hydrateMermaid(sheet)
       const latest = measureArticle(sheet, stage.width, stage.height)
       setMetrics(latest)
       const result = await exportArticleVideo({

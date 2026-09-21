@@ -39,7 +39,7 @@ export type ToolMeta = {
 
 export const TOOLS: ToolMeta[] = [
   { id: 'board', label: 'Choose', blurb: 'Pick the job you want to do', group: 'Start' },
-  { id: 'script', label: 'Script', blurb: 'Write the episode in Markdown', group: 'Write' },
+  { id: 'script', label: 'Readme', blurb: 'README.md with images, mermaid, tables', group: 'Write' },
   { id: 'titles', label: 'Titles', blurb: 'YouTube title formulas', group: 'Write' },
   { id: 'highlight', label: 'Highlight', blurb: 'Article clip with yellow marker', group: 'Picture' },
   { id: 'vertical', label: 'Shorts', blurb: 'One long video → many 9:16 reels', group: 'Picture' },

@@ -14,6 +14,7 @@
     "html-to-image": "^1.11.13",
     "marked": "^18.0.13",
     "mediabunny": "^1.56.2",
+    "mermaid": "^12.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

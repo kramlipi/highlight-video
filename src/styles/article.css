@@ -115,6 +115,53 @@
   color: var(--article-muted);
 }
 
+.article-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 24px;
+  border-radius: 8px;
+}
+
+.article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 24px;
+  font-size: 24px;
+}
+
+.article-body th,
+.article-body td {
+  border: 1px solid color-mix(in srgb, var(--article-fg) 18%, transparent);
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.article-body pre,
+.article-body .md-mermaid {
+  overflow: auto;
+  margin: 0 0 24px;
+  padding: 16px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--article-fg) 6%, var(--article-bg));
+}
+
+.article-body code {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.82em;
+}
+
+.article-body .md-mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.article-body input[type='checkbox'] {
+  width: 1em;
+  height: 1em;
+  margin-right: 0.4em;
+}
+
 .md-highlight {
   font-weight: 700;
   --hl: 1;

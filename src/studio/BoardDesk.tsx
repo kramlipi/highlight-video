@@ -29,6 +29,11 @@ const FEATURES = [
     tool: 'highlight' as ToolId,
   },
   {
+    title: 'README.md with mermaid',
+    body: 'Write a GitHub README: drop images, paste mermaid / tables / code, preview, then send it to Highlight.',
+    tool: 'script' as ToolId,
+  },
+  {
     title: 'Talking-head cartoon',
     body: 'Silence trim, still-frame trim, green-screen oval, Whisper burn-in — pick only the steps you want.',
     tool: 'cartoon' as ToolId,
