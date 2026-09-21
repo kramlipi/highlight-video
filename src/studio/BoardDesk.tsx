@@ -54,7 +54,7 @@ const STEPS = [
 ]
 
 export function BoardDesk() {
-  const { setTool } = useProject()
+  const { setTool, stats, openWaitlist, unlocked } = useProject()
   const jobs = TOOLS.filter((tool) => tool.id !== 'board')
 
   useEffect(() => {
@@ -67,23 +67,32 @@ export function BoardDesk() {
     <section className="landing">
       <div className="landing-hero">
         <div className="landing-copy">
-          <p className="landing-kicker">free youtube shorts studio</p>
+          <p className="landing-kicker">invite-only youtube shorts studio</p>
           <h2 className="landing-title">the clip desk built to cut what people actually watch.</h2>
           <p className="landing-lead">
             Turn one long landscape video into many 9:16 shorts. Then add captions, a highlighter B-roll, a
             talking face, titles, and a publish pack — in the browser, or on this PC.
           </p>
           <div className="landing-cta">
-            <button type="button" className="export-btn landing-btn" onClick={() => setTool('vertical')}>
-              Make shorts
+            <button
+              type="button"
+              className="export-btn landing-btn"
+              onClick={() => (unlocked ? setTool('vertical') : openWaitlist())}
+            >
+              {unlocked ? 'Make shorts' : 'Join waitlist'}
             </button>
             <a className="ghost-btn landing-btn" href="#features">
               See features
             </a>
           </div>
           <p className="landing-fine">
-            No account. Drop a file on the cloud site, or run <code>video-add-cartoon/RUN.bat</code> for huge
-            local paths.
+            {stats?.visitors
+              ? `${stats.visitors.toLocaleString()} ${stats.visitors === 1 ? 'person has' : 'people have'} visited.`
+              : 'Visit count runs on Cloudflare.'}{' '}
+            {unlocked
+              ? 'You are on the waitlist — desks are unlocked.'
+              : 'Invite-only: leave an email or phone to use the desks.'}{' '}
+            Huge local paths still run with <code>video-add-cartoon/RUN.bat</code>.
           </p>
         </div>
         <div className="phone-stack" aria-hidden="true">

@@ -1,4 +1,6 @@
+import { WaitlistPopup } from './components/WaitlistPopup'
 import { ProjectProvider, useProject } from './context/ProjectContext'
+import { formatCount } from './lib/invite'
 import { BoardDesk } from './studio/BoardDesk'
 import { CaptionsDesk } from './studio/CaptionsDesk'
 import { CartoonDesk } from './studio/CartoonDesk'
@@ -13,7 +15,8 @@ import './styles/studio.css'
 import './styles/article.css'
 
 function StudioShell() {
-  const { tool, setTool } = useProject()
+  const { tool, setTool, unlocked, openWaitlist, stats } = useProject()
+  const visitors = stats?.visitors ?? 0
   const shell =
     tool === 'board' ? 'studio studio-home' : tool === 'highlight' ? 'studio studio-highlight' : 'studio'
   return (
@@ -32,6 +35,9 @@ function StudioShell() {
           <h1>Shotflow</h1>
         </button>
         <nav className="bar-links" aria-label="Site">
+          <span className="visit-chip" title="Unique visitors counted on Cloudflare">
+            {visitors > 0 ? `${formatCount(visitors)} visited` : 'counting visits'}
+          </span>
           <a
             href="#features"
             onClick={() => {
@@ -46,9 +52,15 @@ function StudioShell() {
           <button type="button" onClick={() => setTool('captions')}>
             Captions
           </button>
-          <button type="button" className="export-btn bar-cta" onClick={() => setTool('vertical')}>
-            Make shorts
-          </button>
+          {unlocked ? (
+            <button type="button" className="export-btn bar-cta" onClick={() => setTool('vertical')}>
+              Make shorts
+            </button>
+          ) : (
+            <button type="button" className="export-btn bar-cta" onClick={openWaitlist}>
+              Get invite
+            </button>
+          )}
         </nav>
       </header>
       <StudioNav />
@@ -63,6 +75,7 @@ function StudioShell() {
         {tool === 'thumb' ? <ThumbDesk /> : null}
         {tool === 'publish' ? <PublishDesk /> : null}
       </div>
+      <WaitlistPopup />
     </div>
   )
 }

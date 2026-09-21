@@ -1,11 +1,23 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "highlight-video",
+  "main": "worker.ts",
   "compatibility_date": "2026-09-15",
   "workers_dev": true,
   "preview_urls": true,
+  "observability": {
+    "enabled": true
+  },
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  }
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "SHOTFLOW",
+      "id": "e1cf2c8674fc4bdc9b88fafdfbbc6e6d"
+    }
+  ]
 }
